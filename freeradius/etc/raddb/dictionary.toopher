@@ -1,0 +1,14 @@
+# -*- text -*-
+#
+#       For TOOPHER VSA's
+#
+#       $Id$
+#
+VENDOR		TOOPHER				41418
+
+BEGIN-VENDOR	TOOPHER
+
+ATTRIBUTE	Toopher-Pairing-Id	 	  10	string
+ATTRIBUTE	Toopher-Terminal-Name		11	string
+
+END-VENDOR	TOOPHER

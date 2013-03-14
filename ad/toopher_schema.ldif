@@ -1,0 +1,80 @@
+# Schema update script for Toopher Active Directory integration
+# To extend your Active Directory schema to support toopher-specific attributes:
+#      ldife -i -f toopher_ad_schema.ldif -c DC=x DC=example,DC=com
+# replace DC=example,DC=com with values appropriate for your domain.
+
+# Notes on OID Namespace:
+# 1.3.6.1.4.1.41418            : Toopher X.500 OID Root
+#                  .1          : Active Directory Schema Objects
+#                    .1        : Schema Attributes
+#                      .x      : Attribute identifier
+#                    .2        : Schema Classes
+#                      .x      : Class identifier
+
+
+dn: CN=toopher-AuthenticateLogon,CN=Schema,CN=Configuration,DC=x
+changetype: add
+objectClass: top
+objectClass: attributeSchema
+cn: toopher-AuthenticateLogon
+attributeID: 1.3.6.1.4.1.41418.1.1.2
+attributeSyntax: 2.5.5.8
+isSingleValued: TRUE
+adminDisplayName: toopher-AuthenticateLogon
+adminDescription: Whether to authenticate login using Toopher
+oMSyntax: 1
+lDAPDisplayName: toopherAuthenticateLogon
+name: toopher-AuthenticateLogon
+
+dn: CN=toopher-PairingID,CN=Schema,CN=Configuration,DC=x
+changetype: add
+objectClass: top
+objectClass: attributeSchema
+cn: toopher-PairingID
+attributeID: 1.3.6.1.4.1.41418.1.1.1
+attributeSyntax: 2.5.5.12
+isSingleValued: TRUE
+rangeLower: 0
+rangeUpper: 128
+adminDisplayName: toopher-PairingID
+adminDescription: Toopher Pairing ID
+oMSyntax: 64
+lDAPDisplayName: toopherPairingID
+name: toopher-PairingID
+
+DN:
+changetype: modify
+add: schemaUpdateNow
+schemaUpdateNow: 1
+-
+
+dn: CN=toopher-ProtectedEntity,CN=Schema,CN=Configuration,DC=x
+changetype: add
+objectClass: top
+objectClass: classSchema
+cn: toopher-ProtectedEntity
+subClassOf: top
+governsID: 1.3.6.1.4.1.41418.1.2.1
+mayContain: toopherPairingID
+mayContain: toopherAuthenticateLogon
+rDNAttID: cn
+adminDisplayName: toopher-ProtectedEntity
+adminDescription: Toopher 2-factor information
+objectClassCategory: 3
+lDAPDisplayName: toopherProtectedEntity
+name: toopher-ProtectedEntity
+defaultSecurityDescriptor: 
+ D:(A;;RPWPCRCCDCLCLOLORCWOWDSDDTDTSW;;;DA)(A;;RPWPCRCCDCLCLORCWOWDSDDTSW;;;SY)
+ (A;;RPLCLORC;;;AU)
+
+DN:
+changetype: modify
+add: schemaUpdateNow
+schemaUpdateNow: 1
+-
+
+DN: CN=User,CN=Schema,CN=Configuration,DC=x
+changetype: modify
+add: auxiliaryClass
+auxiliaryClass: toopherProtectedEntity
+-
