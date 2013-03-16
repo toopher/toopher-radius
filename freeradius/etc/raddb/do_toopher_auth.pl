@@ -56,9 +56,9 @@ use constant    RLM_MODULE_NOOP=>      7;#  /* module succeeded without doing an
 use constant    RLM_MODULE_UPDATED=>   8;#  /* OK (pairs modified) */
 use constant    RLM_MODULE_NUMCODES=>  9;#  /* How many return codes there are */
 
-use constant AD_HOST => '10.0.1.19';
-use constant AD_PRINCIPAL => 'ad.toopher.dev';
-use constant AD_DC => 'DC=ad,DC=toopher,DC=dev';
+use constant AD_HOST => '172.16.0.4';
+use constant AD_PRINCIPAL => 'vpn.toopher.com';
+use constant AD_DC => 'DC=vpn,DC=toopher,DC=com';
 
 
 # Function to handle authorize

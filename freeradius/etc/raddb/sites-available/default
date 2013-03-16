@@ -1,17 +1,16 @@
 authorize {
-	preprocess
-
-	check_toopher_users_file
+  preprocess
+  check_toopher_users_file
 }
 
 
 authenticate {
-	Auth-Type TOOPHER_AD {
+  Auth-Type TOOPHER_AD {
     do_toopher_ad_auth
     update reply {
       Toopher-Pairing-Id !* 0
     }
-	}
+}
 
   Auth-Type TOOPHER_PAP {
     pap

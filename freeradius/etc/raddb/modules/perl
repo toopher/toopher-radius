@@ -3,10 +3,10 @@
 #  $Id$
 
 perl do_toopher_ad_auth {
-	module = /Users/drew/radius/do_toopher_auth.pl
+  module = ${confdir}/do_toopher_auth.pl
   func_authenticate = authenticate_ad
 }
 perl do_toopher_simple_auth {
-	module = /Users/drew/radius/do_toopher_auth.pl
+  module = ${confdir}/do_toopher_auth.pl
   func_authenticate = authenticate_simple
 }

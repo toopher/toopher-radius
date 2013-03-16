@@ -1,3 +1,6 @@
+files {
+}
+
 files check_toopher_users_file {
 	usersfile = ${confdir}/toopher_users
 }
