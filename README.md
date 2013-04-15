@@ -48,17 +48,21 @@ Set up the FreeRADIUS server
 FreeRADIUS runs on many platforms, including Windows (using CygWin).  In this example, I am going to use Ubuntu Server 12.04 LTS.
 
 Before you start:
+
     sudo apt-get update
     sudo apt-get upgrade
     sudo apt-get install build-essential
 
 ### Install FreeRADIUS and required perl modules
+
     sudo apt-get install freeradius
 
 apt-get will have automatically started freeradius.  Stop it so we can finish getting it set up.
+
     sudo service freeradius stop
 
 Get a copy of the toopher freeradius configuration files from bitbucket.  Assuming you have checked out the toopher repository under ~/toopher:
+
     sudo cp -r ~/toopher/toopher-vpn/freeradius/etc/raddb/* /etc/freeradius/
     sudo apt-get install libnet-ssleay-perl
     sudo cpan JSON
