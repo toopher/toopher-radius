@@ -77,7 +77,7 @@ Start the radius server in debug mode to make sure it is running correctly:
 
 NOTE: if you get an error that looks like
 
-    Can\'t load \'/usr/lib/perl/5.14/auto/Data/Dumper/Dumper.so\' for module Data::Dumper: /usr/lib/perl/5.14/auto/Data/Dumper/Dumper.so: undefined symbol: PL_charclass at ...
+    Can't load '/usr/lib/perl/5.14/auto/Data/Dumper/Dumper.so' for module Data::Dumper: /usr/lib/perl/5.14/auto/Data/Dumper/Dumper.so: undefined symbol: PL_charclass at ...
 
 There is an issue with FreeRadius dynamically loading the perl module.  You can workaround this issue by explicitly loading the module:
 
