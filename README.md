@@ -65,8 +65,11 @@ Get a copy of the toopher freeradius configuration files from bitbucket.  Assumi
 
     sudo cp -r ~/toopher/toopher-vpn/freeradius/etc/raddb/* /etc/freeradius/
     sudo apt-get install libnet-ssleay-perl
-    sudo cpan JSON
-    sudo cpan Net::OAuth
+    sudo cpan JSON Net::OAuth Net::LDAP
+
+Edit /etc/freeradius/clients.conf to add your RADIUS client (firewall/NAT/VPN/whatever) to the list of allowed clients
+
+Set the TOOPHER_CONSUMER_KEY and TOOPHER_CONSUMER_SECRET environment variables
 
 Start the radius server in debug mode to make sure it is running correctly:
 
@@ -74,7 +77,7 @@ Start the radius server in debug mode to make sure it is running correctly:
 
 NOTE: if you get an error that looks like
 
-    Can't load '/usr/lib/perl/5.14/auto/Data/Dumper/Dumper.so' for module Data::Dumper: /usr/lib/perl/5.14/auto/Data/Dumper/Dumper.so: undefined symbol: PL_charclass at ...
+    Can\'t load \'/usr/lib/perl/5.14/auto/Data/Dumper/Dumper.so\' for module Data::Dumper: /usr/lib/perl/5.14/auto/Data/Dumper/Dumper.so: undefined symbol: PL_charclass at ...
 
 There is an issue with FreeRadius dynamically loading the perl module.  You can workaround this issue by explicitly loading the module:
 
