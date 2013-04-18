@@ -46,10 +46,11 @@ sub get_pairing_status
 
 sub authenticate
 {
-  my ($self, $pairingId, $terminalName, $actionName) = @_;
+  my ($self, $pairingId, $terminalName, $actionName, $automationAllowed) = @_;
   my $params = {
     'pairing_id' => $pairingId,
     'terminal_name' => $terminalName,
+    'automation_allowed' => $automationAllowed,
   };
   ${$params}{'action_name'} = $actionName if $actionName;
   return _authenticationStatusFromJson($self->post('authentication_requests/initiate', $params));

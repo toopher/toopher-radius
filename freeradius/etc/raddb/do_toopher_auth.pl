@@ -27,7 +27,7 @@ use strict;
 use FindBin;
 use lib "$FindBin::Bin/";
 # use ...
-# This is very important ! Without this script will not get the filled  hashesh from main.
+# This is very important ! Without this script will not get the filled hashes from main.
 use vars qw(%RAD_REQUEST %RAD_REPLY %RAD_CHECK %RAD_CONFIG);
 use Data::Dumper;
 use ToopherAPI;
@@ -86,7 +86,7 @@ sub check_with_toopher {
 # just do Toopher authentication.  Assumes some other module is handling primary authentication
 sub authenticate_simple {
   if (defined $RAD_REPLY{'Toopher-Pairing-Id'}){
-    return &check_with_toopher($RAD_REPLY{'Toopher-Pairing-Id'}, $RAD_REQUEST{'Calling-Station-Id'});
+    return &check_with_toopher($RAD_REPLY{'Toopher-Pairing-Id'}, undef, undef, 'false');
   } else {
     return RLM_MODULE_OK
   }
