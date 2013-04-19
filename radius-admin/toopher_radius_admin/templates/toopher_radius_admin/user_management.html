@@ -1,0 +1,14 @@
+{% extends "site_base.html" %}
+{% load staticfiles %}
+{% load url from future %}
+{% load i18n %}
+
+{% block content %}
+User Administration
+{% endblock %}
+
+{% block script_footer %}
+<script>
+$('#navbar-user-admin').addClass('active');
+</script>
+{% endblock %}

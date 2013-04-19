@@ -1,0 +1,14 @@
+{% extends "site_base.html" %}
+{% load staticfiles %}
+{% load url from future %}
+{% load i18n %}
+
+{% block content %}
+RADIUS Administration
+{% endblock %}
+
+{% block script_footer %}
+<script>
+$('#navbar-radius-admin').addClass('active');
+</script>
+{% endblock %}

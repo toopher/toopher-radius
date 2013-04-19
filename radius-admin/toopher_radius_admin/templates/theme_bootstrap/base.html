@@ -1,0 +1,102 @@
+{% load i18n %} 
+{% load staticfiles %}
+{% load url from future %}
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
+    <head>
+        <meta charset="utf-8" />
+        <title>{% block head_title_base %}{% if SITE_NAME %}{{ SITE_NAME }} | {% endif %}{% block head_title %}{% endblock %}{% endblock %}</title>
+        <link rel="shortcut icon" href="{% static 'img/favicon.ico' %}" />
+        {% block viewport %}
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        {% endblock %}
+
+        {% block style_base %}
+        	{% if DEBUG %}
+	            <link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.0/css/bootstrap.css" rel="stylesheet">
+	            <link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.0/css/bootstrap-responsive.css" rel="stylesheet">
+            {% else %}
+	            <link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.0/css/bootstrap.min.css" rel="stylesheet">
+	            <link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.0/css/bootstrap-responsive.min.css" rel="stylesheet">
+            {% endif %}
+            {% block extra_style %}{% endblock %}
+        {% endblock %}
+
+        {% block html5shim %}
+            <!-- HTML5 shim, for IEasdf6-8 support of HTML elements -->
+            <!--[if lt IE 9]>
+                <script src="{% static "pinax/js/html5shiv.js" %}"></script>
+            <![endif]-->
+        {% endblock %}
+
+        {% block extra_head_base %}
+        	
+            {% block extra_head %}{% endblock %}
+        {% endblock %}
+    </head>
+    <body class="{% block body_class %}{% endblock %}" id="{% block body_id %}{% endblock %}">
+	<div id='wrap'>
+		{% block topbar_base %}
+            <div class="navbar"><!-- {% block navbar_class %}navbar-fixed-top{% endblock %}">-->
+                <div class="navbar-inner">
+                    <div class="container">
+                        {% block topbar %}
+                            <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                                <span class="icon-bar"></span>
+                                <span class="icon-bar"></span>
+                                <span class="icon-bar"></span>
+                            </a>
+                            {% block site_brand %}
+                            <a class="brand" href="{% url "home" %}">
+                            	<div class='offset1 span4'>
+                            		<div class='name'>Toopher</div>
+                            		<div class='tagline'>RADIUS Administration Portal</div>
+                            	</div>
+                            </a>
+                            {% endblock %}
+                            {% block nav %}
+                            <div class='pull-right'>
+                            <div id='nav-tab-vertical-spacer'></div>
+                            <ul class="nav">
+                            	{% if user.is_authenticated %}
+                            	    <li id='navbar-dashboard'><a href="{% url 'dashboard' %}">{% trans "Dashboard" %}</a></li>
+							        <li id='navbar-backend-config'><a href="{% url 'backend-config' %}">{% trans "Backend Configuration" %}</a></li>
+							        <li id='navbar-vpn-settings'><a href="{% url 'vpn-settings' %}">{% trans "VPN Settings" %}</a></li>
+							        <li id='navbar-user-management'><a href="{% url 'user-management' %}">{% trans "User Management" %}</a></li>
+							        <li id='navbar-radius-admin'><a href="{% url 'radius-admin' %}">{% trans "Administration" %}</a></li>
+							    {% endif %}
+                            </ul>
+                            </div>
+                            {% endblock %}
+                        {% endblock %}
+                    </div>
+                </div>
+            </div>
+        {% endblock %}
+        
+        {% block body_base %}
+            <div id='main' class="container-fluid clear-top">
+                {% include "_messages.html" %}
+                {% block body %}
+                {% endblock %}
+            </div>
+        {% endblock %}
+        </div>
+		</div>
+        {% block footer_base %}
+            <footer class='row-fluid footer navbar-fixed-bottom'>
+            	{% block footer %}{% endblock %}
+            </footer>
+        {% endblock %}
+
+
+        {% block extra_body_base %}
+            {% block extra_body %}{% endblock %}
+        {% endblock %}
+
+        {% block script_base %}
+        	
+            {% block extra_script %}{% endblock %}
+        {% endblock %}
+    </body>
+</html>

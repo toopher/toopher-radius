@@ -5,13 +5,12 @@
 {% load staticfiles %}
 
 {% block head_title_base %}
-BurnBin.com
+Toopher Radius Admin Panel
 {% comment %}    {% block title %}{% endblock %} {% endcomment %}
 {% endblock %}
 
 {% block extra_style %}
-	<link href="{% static 'css/number-polyfill.css' %}"  rel="stylesheet">
-    <link href="{% static 'css/theme.css' %}" rel="stylesheet">
+	<link href="{% static 'css/theme.css' %}" rel="stylesheet">
 {% endblock %}
 
 {% block extra_head %}
@@ -33,7 +32,7 @@ BurnBin.com
 	    cache: false
     });
   	$(function() {
-  	  $('input, textarea').placeholder();
+  	  //$('input, textarea').placeholder();
   	});
   </script>
   {% block extrahead %}{% endblock %}
@@ -41,12 +40,14 @@ BurnBin.com
 
 {% block body %}
 <div class="row-fluid">
+	<ul class="nav nav-tabs pull-right">
+    </ul>
     <div class="span10 offset1">
-
         <div id="header" class="page-header">
             <h2>{% block headline %}{% endblock %}</h2>
         </div>
         <div id="content">
+            
             {% block content %}{% endblock %}
         </div>
     </div>
