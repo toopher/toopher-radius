@@ -1,0 +1,84 @@
+{% extends "theme_bootstrap/base.html" %}
+{% load url from future %}
+{% load metron_tags %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block head_title_base %}
+BurnBin.com
+{% comment %}    {% block title %}{% endblock %} {% endcomment %}
+{% endblock %}
+
+{% block extra_style %}
+	<link href="{% static 'css/number-polyfill.css' %}"  rel="stylesheet">
+    <link href="{% static 'css/theme.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block extra_head %}
+  {% if DEBUG %}
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-placeholder/2.0.7/jquery.placeholder.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore.js"></script>
+  {% else %}
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-placeholder/2.0.7/jquery.placeholder.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
+  
+  <script type="text/javascript">
+
+	</script>
+  {% endif %}
+  <script>
+  	$.ajaxSetup({
+	    cache: false
+    });
+  	$(function() {
+  	  $('input, textarea').placeholder();
+  	});
+  </script>
+  {% block extrahead %}{% endblock %}
+{% endblock %}
+
+{% block body %}
+<div class="row-fluid">
+    <div class="span10 offset1">
+
+        <div id="header" class="page-header">
+            <h2>{% block headline %}{% endblock %}</h2>
+        </div>
+        <div id="content">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+    <div id="sidebar" class="span3">
+        {% block sidebar %}{% endblock %}
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}
+    {% include "_footer.html" %}
+{% endblock %}
+
+{% block extra_body_base %}
+    {% analytics %}
+    {% block extra_body %}{% endblock %}
+    {% block scriptfooter %}
+       	<!-- cdn stuff -->
+        <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.0/js/bootstrap.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-timeago/1.0.2/jquery.timeago.min.js"></script>
+        <!-- end cdn -->
+		
+		<script src="{% static "pinax/js/theme.js" %}"></script>
+        
+		<script>
+			jQuery.timeago.settings.allowFuture = true;
+			$('.timeago').timeago();
+		</script>
+    {% endblock %}
+{% endblock %}
+
+{% block extra_script %}
+	{% block script_footer %}{% endblock %}
+
+{% endblock %}

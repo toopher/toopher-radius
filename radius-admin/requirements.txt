@@ -1,0 +1,28 @@
+--extra-index-url=http://dist.pinaxproject.com/dev/
+--extra-index-url=http://dist.pinaxproject.com/alpha/
+
+gunicorn==0.17.2
+
+Django==1.4.3
+pinax-theme-bootstrap==3.0a2
+pinax-theme-bootstrap-account==1.0b2
+django-user-accounts==1.0b8
+django-forms-bootstrap==2.0.3.post1
+django-extensions==1.0.3
+metron==1.1
+pinax-utils==1.0b1.dev3
+eventlog==0.6
+django-jsonfield==0.8.12
+dj-database-url==0.2.1
+
+#timezone support
+pytz
+
+# Toopher API
+git+https://github.com/toopher/toopher-python.git#egg=toopher-python
+
+# ssl-ifiy
+git+https://github.com/rdegges/django-sslify.git#egg=django-sslify
+django-storages==1.1.6
+boto==2.8.0
+South==0.7.6

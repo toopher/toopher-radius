@@ -1,0 +1,15 @@
+{% load i18n %}
+{% load url from future %}
+{% load staticfiles %}
+<div class="row-fluid">
+        <div class='legal span2'>
+    &copy; {% now "Y" %} &dash; BurnBin
+    </div>
+    <span class='pull-left'>|</span>
+    <div class='span3'>
+        <a href='https://www.toopher.com'>
+                <span>Secured by</span>
+                <img alt='toopher logo' src='{% static 'img/toopher_logo.png' %}'></img>
+        </a>
+    </div>
+</div>
