@@ -65,7 +65,7 @@ Get a copy of the toopher freeradius configuration files from bitbucket.  Assumi
 
     sudo cp -r ~/toopher/toopher-vpn/freeradius/etc/raddb/* /etc/freeradius/
     sudo apt-get install libnet-ssleay-perl
-    sudo cpan JSON Net::OAuth Net::LDAP LWP::Protocol::https
+    sudo cpan JSON Net::OAuth Net::LDAP LWP::Protocol::https DBD:SQLite YAML
 
 Edit /etc/freeradius/clients.conf to add your RADIUS client (firewall/NAT/VPN/whatever) to the list of allowed clients
 

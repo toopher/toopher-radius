@@ -32,8 +32,9 @@ use vars qw(%RAD_REQUEST %RAD_REPLY %RAD_CHECK %RAD_CONFIG);
 use Data::Dumper;
 use ToopherAPI;
 use Net::LDAP;
+use YAML::Tiny;
 
-my $api = ToopherAPI->new(key=>$ENV{'TOOPHER_CONSUMER_KEY'}, secret=>$ENV{'TOOPHER_CONSUMER_SECRET'});
+my $api; = ToopherAPI->new(key=>$ENV{'TOOPHER_CONSUMER_KEY'}, secret=>$ENV{'TOOPHER_CONSUMER_SECRET'});
 
 # This is hash wich hold original request from radius
 #my %RAD_REQUEST;
@@ -60,6 +61,7 @@ use constant AD_HOST => '172.16.0.4';
 use constant AD_PRINCIPAL => 'vpn.toopher.com';
 use constant AD_DC => 'DC=vpn,DC=toopher,DC=com';
 
+my $toopher_config; 
 
 # Function to handle authorize
 sub authorize {
@@ -101,12 +103,13 @@ sub authenticate_ad {
   my $message = $ldap->bind($username . '@' . AD_PRINCIPAL, password => $passwd);
   if ($message->is_error){
 
-    $RAD_REPLY{'Reply-Message'} = 'Failed AD check';
+    $RAD_REPLY{'Reply-Message'} = 'bad username or password';
     return RLM_MODULE_REJECT;
   }
   my $toopherPairingId = '';
   my $doToopherAuthOnLogin = 0;
   if (defined $RAD_REPLY{'Toopher-Pairing-Id'}){
+    # Toopher pairing info supplied from some other source, don't look for it in AD
     $toopherPairingId = $RAD_REPLY{'Toopher-Pairing-Id'};
     $doToopherAuthOnLogin = 1;
     &radiusd::radlog(0, 'Got Toopher Pairing ID of ' . $toopherPairingId . ' from RAD_REPLY');
@@ -226,14 +229,6 @@ sub detach {
     &radiusd::radlog(0,"rlm_perl::Detaching. Reloading. Done.");
 }
 
-#
-# Some functions that can be called from other functions
-#
-
-sub test_call {
-    # Some code goes here
-}
-
 sub log_request_attributes {
     for (keys %RAD_REQUEST) {
             &radiusd::radlog(1, "RAD_REQUEST: $_ = $RAD_REQUEST{$_}");
@@ -248,3 +243,6 @@ sub log_request_attributes {
             &radiusd::radlog(1, "RAD_CONFIG  : $_ = $RAD_CONFIG{$_}");
     }
 }
+
+$toopher_config = YAML::Load('toopher_radius_config.yaml');
+$api = ToopherAPI->new(key=>$toopher_config->{'TOOPHER_CONSUMER_KEY'}, secret=>$toopher_config->{'TOOPHER_CONSUMER_SECRET'});
