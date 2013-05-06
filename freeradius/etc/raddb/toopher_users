@@ -3,8 +3,18 @@
 DEFAULT Auth-Type := TOOPHER_AD
   Fall-Through = Yes
 
+# example for completely locally-defined user (no AD interaction, no toopher)
+usr_local Cleartext-Password := "p@ssw0rd", Auth-Type := TOOPHER_PAP
+
 # example for completely locally-defined user (no AD interaction)
-usr_local_local Cleartext-Password := "p@ssw0rd", Auth-Type := TOOPHER_PAP
+evan Cleartext-Password := "p@ssw0rd", Auth-Type := TOOPHER_PAP
+
+# example for completely locally-defined user (no AD interaction)
+_drew Cleartext-Password := "p@ssw0rd", Auth-Type := TOOPHER_PAP
+  Toopher-Pairing-Id = 'b9fb958d-42fe-4bbc-9330-9e1d0aa1c780'
+
+# example for completely locally-defined user (no AD interaction)
+usr_local_toopher Cleartext-Password := "p@ssw0rd", Auth-Type := TOOPHER_PAP
   Toopher-Pairing-Id = '5433f012-1442-429a-a4b7-07a38e543e3c'
 
 # example for user defined in AD, with Toopher-Pairing-Id not in AD
