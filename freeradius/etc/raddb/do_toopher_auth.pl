@@ -26,15 +26,16 @@
 use strict;
 use FindBin;
 use lib "$FindBin::Bin/";
+$Carp::Verbose = 1;
 # use ...
 # This is very important ! Without this script will not get the filled hashes from main.
 use vars qw(%RAD_REQUEST %RAD_REPLY %RAD_CHECK %RAD_CONFIG);
 use Data::Dumper;
 use ToopherAPI;
 use Net::LDAP;
-use YAML::Tiny;
+use YAML;
+use DBI;
 
-my $api; = ToopherAPI->new(key=>$ENV{'TOOPHER_CONSUMER_KEY'}, secret=>$ENV{'TOOPHER_CONSUMER_SECRET'});
 
 # This is hash wich hold original request from radius
 #my %RAD_REQUEST;
@@ -61,12 +62,41 @@ use constant AD_HOST => '172.16.0.4';
 use constant AD_PRINCIPAL => 'vpn.toopher.com';
 use constant AD_DC => 'DC=vpn,DC=toopher,DC=com';
 
-my $toopher_config; 
+
+our $api;
+our $config;
+
+$config = YAML::LoadFile('toopher_radius_config.yaml');
+$api = ToopherAPI->new(key=>$config->{'toopher_api'}{'key'},
+                          secret=>$config->{'toopher_api'}{'secret'},
+                          api_url=>$config->{'toopher_api'}{'url'});
+my $dbh = DBI->connect($config->{'session_store'}{'connection_string'});
+$dbh->do('CREATE TABLE IF NOT EXISTS session_store(state TEXT PRIMARY KEY, username TEXT)');
+$dbh->disconnect();
 
 # Function to handle authorize
 sub authorize {
   $RAD_CHECK{'Auth-Type'} = 'TOOPHER_AD';
   return RLM_MODULE_OK;
+}
+
+sub get_saved_username_from_state{
+  my ($state) = @_;
+
+  my $dbh = DBI->connect($config->{'session_store'}{'connection_string'});
+  my $sth = $dbh.prepare("SELECT username FROM session_store WHERE state=?");
+  $sth.execute($state);
+  my $result = $sth.fetch();
+  $sth.finish();
+  $dbh->disconnect();
+  return $result;
+}
+
+sub issue_pairing_challenge_prompt {
+  $RAD_REPLY{'State'} = 'challenge_reply';
+  $RAD_REPLY{'Reply-Message'} = $config->{'prompts'}{'pairing_challenge'};
+  $RAD_CHECK{'Response-Packet-Type'} = 'Access-Challenge';
+  return RLM_MODULE_HANDLED;
 }
 
 sub check_with_toopher {
@@ -85,6 +115,29 @@ sub check_with_toopher {
   } 
 }
 
+sub pair_with_toopher {
+  my ($pairingPhrase, $userName) = @_;
+  my $pairing;
+  eval { $pairing = $api->pair($pairingPhrase, $userName);};
+  if($@){
+    &radiusd::radlog(0, "Error in pairing: " . $@);
+    return 0;
+  }
+  while(!$pairing->enabled){
+    sleep(1);
+    eval { $pairing = $api->get_pairing_status($pairing->id); };
+    if($@){
+      &radiusd::radlog(0, "Error in pairing: " . $@);
+      return 0;
+    }
+  }
+  if($pairing->enabled =~ /rue/){
+    return $pairing->id;
+  } else {
+    return 0;
+  }
+}
+
 # just do Toopher authentication.  Assumes some other module is handling primary authentication
 sub authenticate_simple {
   if (defined $RAD_REPLY{'Toopher-Pairing-Id'}){
@@ -94,13 +147,14 @@ sub authenticate_simple {
   }
 }
 
-# authenticate through Active Directory, then do Toopher authentication
-sub authenticate_ad {
+sub authenticate_ad_username_password {
 
   my $username = $RAD_REQUEST{'User-Name'};
   my $passwd = $RAD_REQUEST{'User-Password'};
-  my $ldap = Net::LDAP->new(AD_HOST) or die "$@";
-  my $message = $ldap->bind($username . '@' . AD_PRINCIPAL, password => $passwd);
+  &radiusd::radlog(0, 'ldap config is:');
+  &radiusd::radlog(0, $config->{'ldap'});
+  my $ldap = Net::LDAP->new($config->{'ldap'}{'host'}) or die "$@";
+  my $message = $ldap->bind($username . '@' . $config->{'ldap'}{'principal'}, password => $passwd);
   if ($message->is_error){
 
     $RAD_REPLY{'Reply-Message'} = 'bad username or password';
@@ -108,6 +162,7 @@ sub authenticate_ad {
   }
   my $toopherPairingId = '';
   my $doToopherAuthOnLogin = 0;
+  my $userCN = '';
   if (defined $RAD_REPLY{'Toopher-Pairing-Id'}){
     # Toopher pairing info supplied from some other source, don't look for it in AD
     $toopherPairingId = $RAD_REPLY{'Toopher-Pairing-Id'};
@@ -116,7 +171,7 @@ sub authenticate_ad {
     undef $RAD_REPLY{'Toopher-Pairing-Id'};
   } else {
     my $search = $ldap->search(
-      base => AD_DC,
+      base => $config->{'ldap'}{'dc'},
       filter => "(&(objectCategory=Person)(objectClass=User)(sAMAccountName=" . $username . "))");
     my @entries = $search->entries;
     if (length(@entries) != 1) {
@@ -124,16 +179,21 @@ sub authenticate_ad {
       $RAD_REPLY{'REPLY_MESSAGE'} = 'Unexpected error querying active directory!';
       return RLM_MODULE_REJECT;
     }
+    $userCN = $entries[0]->get_value('cn');
     if ($entries[0]->exists('toopherPairingID')){
       $toopherPairingId = $entries[0]->get_value('toopherPairingID');
       &radiusd::radlog(0, 'Got Toopher Pairing ID of ' . $toopherPairingId . ' from AD');
     }
     if ($entries[0]->exists('toopherAuthenticateLogon')){
-      $doToopherAuthOnLogin = $entries[0]->get_value('toopherAuthenticateLogon') == 'TRUE';
+      $doToopherAuthOnLogin = $entries[0]->get_value('toopherAuthenticateLogon') eq 'TRUE';
     }
   }
   if ($doToopherAuthOnLogin){
-    return &check_with_toopher($toopherPairingId, $RAD_REQUEST{'Calling-Station-Id'});
+    if($toopherPairingId){
+      return &check_with_toopher($toopherPairingId, $RAD_REQUEST{'Calling-Station-Id'});
+    } else {
+      return &issue_pairing_challenge_prompt();
+    }
     my $auth = $api->authenticate($toopherPairingId, $RAD_REQUEST{'Calling-Station-Id'});
     while($auth->pending){
       sleep(1);
@@ -147,6 +207,73 @@ sub authenticate_ad {
     } 
   } else {
     return RLM_MODULE_OK;
+  }
+}
+
+sub handle_pairing_challenge_reply{
+  &radiusd::radlog(0, 'handle_pairing_challenge_reply');
+  my $username = $RAD_REQUEST{'User-Name'};
+  my $pairing_phrase = $RAD_REQUEST{'User-Password'};
+
+  my $ldap = Net::LDAP->new($config->{'ldap'}{'host'}) or die "$@";
+  my $message = $ldap->bind($config->{'ldap'}{'username'} . '@' . $config->{'ldap'}{'principal'}, password => $config->{'ldap'}{'password'});
+  if ($message->is_error){
+    &radiusd::radlog(0, 'unable to bind to radius client user account');
+    &radiusd::radlog(0, 'ldap return code is ' . $message->code());
+  }
+  my $search = $ldap->search(
+    base => $config->{'ldap'}{'dc'},
+    filter => "(&(objectCategory=Person)(objectClass=User)(sAMAccountName=" . $username . "))");
+  my @entries = $search->entries;
+  if (length(@entries) != 1) {
+    $RAD_REPLY{'REPLY_MESSAGE'} = 'Unexpected error querying active directory!';
+    return RLM_MODULE_REJECT;
+  }
+  my $ldapUser = $entries[0];
+
+  my $userCN = $ldapUser->get_value('CN');
+  &radiusd::radlog(0, "username is $username, CN is $userCN, pairing phrase is $pairing_phrase"); 
+
+  
+  my $pairingId = &pair_with_toopher($pairing_phrase, $userCN);
+  if(!$pairingId){
+    &radiusd::radlog(0, "Failed to pair user $username with pairing phrase $pairing_phrase");
+    $RAD_REPLY{'Reply-Message'} = 'Failed to pair account with ToopherAPI';
+    $RAD_REPLY{'State'} = 'init';
+    return RLM_MODULE_REJECT;
+  }
+  &radiusd::radlog(0, "Paired user $username with Toopher.  Pairing id=$pairingId");
+
+  $message = $ldapUser->add( toopherPairingID => $pairingId )->update($ldap);
+  if ($message->is_error){
+    &radiusd::radlog(0, 'unable to update user account with Toopher Pairing ID.');
+    &radiusd::radlog(0, 'ldap return code is ' . $message->code());
+  }
+
+  return RLM_MODULE_OK;
+}
+
+# authenticate through Active Directory, then do Toopher authentication
+sub authenticate_ad {
+  log_request_attributes();
+  my $state = 'init';
+  if($RAD_REQUEST{'State'}){
+    if($RAD_REQUEST{'State'} =~ /^0x/){
+      $state = pack('H*', substr($RAD_REQUEST{'State'}, 2));
+    } else {
+      $state = $RAD_REQUEST{'State'};
+    }
+    $RAD_REQUEST{'State'} = 'init';
+  }
+  &radiusd::radlog(0, "Decoded state is $state");
+  if($state eq 'init'){
+    return authenticate_ad_username_password();
+  } elsif($state =~ 'challenge_reply'){
+    return handle_pairing_challenge_reply();
+  } else {
+    $RAD_REPLY{'Reply-Message'} = 'unknown State message: ' . $state;
+    $RAD_REPLY{'State'} = 'init';
+    return RLM_MODULE_REJECT;
   }
 }
 
@@ -244,5 +371,5 @@ sub log_request_attributes {
     }
 }
 
-$toopher_config = YAML::Load('toopher_radius_config.yaml');
-$api = ToopherAPI->new(key=>$toopher_config->{'TOOPHER_CONSUMER_KEY'}, secret=>$toopher_config->{'TOOPHER_CONSUMER_SECRET'});
+
+1;

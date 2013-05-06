@@ -46,11 +46,10 @@ sub get_pairing_status
 
 sub authenticate
 {
-  my ($self, $pairingId, $terminalName, $actionName, $automationAllowed) = @_;
+  my ($self, $pairingId, $terminalName, $actionName) = @_;
   my $params = {
     'pairing_id' => $pairingId,
     'terminal_name' => $terminalName,
-    'automation_allowed' => $automationAllowed,
   };
   ${$params}{'action_name'} = $actionName if $actionName;
   return _authenticationStatusFromJson($self->post('authentication_requests/initiate', $params));
@@ -66,6 +65,7 @@ sub get_authentication_status
 struct(
   PairingStatus => [
     id => '$',
+    pending => '$',
     enabled => '$',
     user_id => '$',
     user_name => '$',
@@ -89,6 +89,7 @@ sub _pairingStatusFromJson
   my $obj = decode_json($jsonStr);
   PairingStatus->new(
     id => $obj->{'id'},
+    pending => $obj->{'pending'},
     enabled => $obj->{'enabled'},
     user_id => $obj->{'user'}{'id'},
     user_name => $obj->{'user'}{'name'},
