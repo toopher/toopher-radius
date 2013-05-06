@@ -8,11 +8,20 @@ set TOOPHER_ADMIN_GROUP_NAME=ToopherAdministrators
 set ADMIN_COMMAND=%1
 set USERNAME=%2
 
-if [%ADMIN_COMMAND%] == [] call :USAGE
-if [%ADMIN_COMMAND%] == [enable] call :SET_TOOPHER_ENABLED TRUE
-if [%ADMIN_COMMAND%] == [disable] call :SET_TOOPHER_ENABLED FALSE
-if [%ADMIN_COMMAND%] == [reset-pairing] call :TOOPHER_RESET_PAIRING
-
+if [%ADMIN_COMMAND%] == [enable] (
+call :SET_TOOPHER_ENABLED TRUE
+) else (
+if [%ADMIN_COMMAND%] == [disable] (
+call :SET_TOOPHER_ENABLED FALSE
+) else (
+if [%ADMIN_COMMAND%] == [reset-pairing] (
+call :TOOPHER_RESET_PAIRING
+) else (
+if [%ADMIN_COMMAND%] == [show-users] (
+call :SHOW_TOOPHER_USERS
+) else (
+call :USAGE
+))))
 
 EndLocal
 GOTO END
@@ -22,12 +31,20 @@ REM subroutines
 :USAGE
 	echo toopher-admin.bat : Automate administration of Toopher User Attributes in Active Directory
 	echo.
-	echo USAGE: toopher-admin <COMMAND> <UserName>
+	echo USAGE: toopher-admin COMMAND UserName
 	echo.
 	echo Available Commands:
-	echo   enable
-	echo   disable
-	echo   reset-pairing
+	echo   enable  [Username]       : Enable Toopher 2-factor authentication for
+	echo                              a particular user when they log in.
+	echo   disable [Username]       : Remove Toopher 2-factor authentication for
+	echo                              a particular a user
+	echo   reset-pairing [Username] : Remove the pairing between a user account
+	echo                              and mobile device used for authentication.
+	echo                              The user will be prompted to pair a new
+	echo                              device the next time they log in unless you
+	echo                              also run the "disable" command.
+	echo   show-users               : list users who currently have 
+	echo                              Toopher 2-factor authentication enabled
 	goto :EOF
 	
 :GET_USER_AND_TOOPHER_ADMIN_DN
@@ -50,6 +67,10 @@ REM subroutines
 	call :REVOKE_TOOPHER_ADMIN_ACCESS_TO_USER
 	echo   Grant %TOOPHER_ADMIN_GROUP_NAME% R/W Access to toopherAuthenticateLogon and toopherPairingId
 	dsacls %USER_DN% /G %TOOPHER_ADMINS%:WP;toopherAuthenticateLogon %TOOPHER_ADMINS%:WP;toopherPairingID >NUL
+	goto :EOF
+
+:SHOW_TOOPHER_USERS
+	dsquery * -filter "(toopherAuthenticateLogon=TRUE)"
 	goto :EOF
 	
 :TOOPHER_RESET_PAIRING
