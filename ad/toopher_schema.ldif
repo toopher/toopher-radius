@@ -1,6 +1,6 @@
 # Schema update script for Toopher Active Directory integration
 # To extend your Active Directory schema to support toopher-specific attributes:
-#      ldife -i -f toopher_ad_schema.ldif -c DC=x DC=example,DC=com
+#      ldifde -i -f toopher_ad_schema.ldif -c DC=x DC=example,DC=com
 # replace DC=example,DC=com with values appropriate for your domain.
 
 # Notes on OID Namespace:
@@ -78,3 +78,10 @@ changetype: modify
 add: auxiliaryClass
 auxiliaryClass: toopherProtectedEntity
 -
+
+dn: CN=ToopherAdministrators,CN=Users,DC=x
+changetype: add
+objectClass: top
+objectClass: group
+cn: ToopherAdministrators
+
