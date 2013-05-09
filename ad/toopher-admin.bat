@@ -66,11 +66,11 @@ REM subroutines
 	REM revoke existing Toopher Admin ACIs to prevent duplicate rules
 	call :REVOKE_TOOPHER_ADMIN_ACCESS_TO_USER
 	echo   Grant %TOOPHER_ADMIN_GROUP_NAME% R/W Access to toopherAuthenticateLogon and toopherPairingId
-	dsacls %USER_DN% /G %TOOPHER_ADMINS%:WP;toopherAuthenticateLogon %TOOPHER_ADMINS%:WP;toopherPairingID >NUL
+	dsacls %USER_DN% /G %TOOPHER_ADMINS_DN%:WP;toopherAuthenticateLogon %TOOPHER_ADMINS_DN%:WP;toopherPairingID >NUL
 	goto :EOF
 
 :SHOW_TOOPHER_USERS
-	dsquery * -filter "(toopherAuthenticateLogon=TRUE)"
+	dsquery * -filter "(toopherAuthenticateLogon=TRUE)" -attr displayName sAMAccountName toopherAuthenticateLogon toopherPairingID
 	goto :EOF
 	
 :TOOPHER_RESET_PAIRING
