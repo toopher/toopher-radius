@@ -24,16 +24,26 @@
 #
 
 use strict;
+#use diagnostics;
 use FindBin;
 use lib "$FindBin::Bin/";
+use lib "$FindBin::Bin/lib";
+use Carp;
 $Carp::Verbose = 1;
+
+my $testmode = $ARGV[0] eq 'test';
+
 # use ...
 # This is very important ! Without this script will not get the filled hashes from main.
 use vars qw(%RAD_REQUEST %RAD_REPLY %RAD_CHECK %RAD_CONFIG);
+
 use ToopherAPI;
 use Net::LDAP;
-use YAML;
-
+#use YAML;
+#use JSON qw{ decode_json };
+use toopher_radius_config;
+use Data::Dumper;
+use Net::OAuth::SignatureMethod::HMAC_SHA1;
 
 use constant    RLM_MODULE_REJECT=>    0;#  /* immediately reject the request */
 use constant    RLM_MODULE_FAIL=>      1;#  /* module failed, don't reply */
@@ -47,13 +57,23 @@ use constant    RLM_MODULE_UPDATED=>   8;#  /* OK (pairs modified) */
 use constant    RLM_MODULE_NUMCODES=>  9;#  /* How many return codes there are */
 
 our $api;
-our $config;
 
-$config = YAML::LoadFile('toopher_radius_config.yaml');
+#$config = YAML::LoadFile('toopher_radius_config.yaml');
+#my $contents = do { local $/; local @ARGV = "toopher_radius_config.json"; <> };
+#$config = decode_json($contents);
+my $config = toopher_radius_config::get_config;
 $api = ToopherAPI->new(key=>$config->{'toopher_api'}{'key'},
                           secret=>$config->{'toopher_api'}{'secret'},
                           api_url=>$config->{'toopher_api'}{'url'});
 
+sub _log {
+  my ($msg) = @_;
+  if($testmode){
+    print($msg . "\n");
+  } else { 
+    &radiusd::radlog(0, $msg);
+  }
+}
 # Function to handle authorize
 sub authorize {
   $RAD_CHECK{'Auth-Type'} = 'TOOPHER_AD';
@@ -88,18 +108,18 @@ sub pair_with_toopher {
   my $pairing;
   eval { $pairing = $api->pair($pairingPhrase, $userName);};
   if($@){
-    &radiusd::radlog(0, "Error in pairing: " . $@);
+    _log("Error in pairing: " . $@);
     return 0;
   }
   while(!$pairing->enabled){
     sleep(1);
     eval { $pairing = $api->get_pairing_status($pairing->id); };
     if($@){
-      &radiusd::radlog(0, "Error in pairing: " . $@);
+      _log("Error in pairing: " . $@);
       return 0;
     }
   }
-  if($pairing->enabled =~ /rue/){
+  if($pairing->enabled){
     return $pairing->id;
   } else {
     return 0;
@@ -116,13 +136,12 @@ sub authenticate_simple {
 }
 
 sub authenticate_ad_username_password {
-
   my $username = $RAD_REQUEST{'User-Name'};
   my $passwd = $RAD_REQUEST{'User-Password'};
   my $ldap = Net::LDAP->new($config->{'ldap'}{'host'}) or die "$@";
   my $message = $ldap->bind($username . '@' . $config->{'ldap'}{'principal'}, password => $passwd);
   if ($message->is_error){
-
+    _log('bad initial bind');
     $RAD_REPLY{'Reply-Message'} = 'bad username or password';
     return RLM_MODULE_REJECT;
   }
@@ -181,8 +200,8 @@ sub handle_pairing_challenge_reply{
   my $ldap = Net::LDAP->new($config->{'ldap'}{'host'}) or die "$@";
   my $message = $ldap->bind($config->{'ldap'}{'username'} . '@' . $config->{'ldap'}{'principal'}, password => $config->{'ldap'}{'password'});
   if ($message->is_error){
-    &radiusd::radlog(0, 'unable to bind to radius client user account');
-    &radiusd::radlog(0, 'ldap return code is ' . $message->code());
+    _log('unable to bind to radius client user account');
+    _log('ldap return code is ' . $message->code());
   }
   my $search = $ldap->search(
     base => $config->{'ldap'}{'dc'},
@@ -197,17 +216,17 @@ sub handle_pairing_challenge_reply{
   
   my $pairingId = &pair_with_toopher($pairing_phrase, $userCN);
   if(!$pairingId){
-    &radiusd::radlog(0, "Failed to pair user $username");
+    _log("Failed to pair user $username");
     $RAD_REPLY{'Reply-Message'} = 'Failed to pair account with ToopherAPI';
     $RAD_REPLY{'State'} = 'init';
     return RLM_MODULE_REJECT;
   }
-  &radiusd::radlog(0, "Paired user $username with Toopher.  Pairing id=$pairingId");
+  _log("Paired user $username with Toopher.  Pairing id=$pairingId");
 
   $message = $ldapUser->add( toopherPairingID => $pairingId )->update($ldap);
   if ($message->is_error){
-    &radiusd::radlog(0, 'unable to update user account with Toopher Pairing ID.');
-    &radiusd::radlog(0, 'ldap return code is ' . $message->code());
+    _log('unable to update user account with Toopher Pairing ID.');
+    _log('ldap return code is ' . $message->code());
   }
 
   return RLM_MODULE_OK;
@@ -215,7 +234,6 @@ sub handle_pairing_challenge_reply{
 
 # authenticate through Active Directory, then do Toopher authentication
 sub authenticate_ad {
-  log_request_attributes();
   my $state = 'init';
   if($RAD_REQUEST{'State'}){
     if($RAD_REQUEST{'State'} =~ /^0x/){
@@ -236,5 +254,46 @@ sub authenticate_ad {
   }
 }
 
+sub test_toopher_rlm_perl {
+  print('disable toopher for user dshafer and hit ENTER');
+  <STDIN>;
+  _log('testing simple login');
+  $RAD_REQUEST{'User-Name'} = 'dshafer';
+  $RAD_REQUEST{'User-Password'} = 'p@ssw0rd';
+  $RAD_REQUEST{'State'} = 'init';
+  croak("Didn't return OK") unless authenticate_ad() == RLM_MODULE_OK;
+  _log('OK.');
+  print('enable toopher for user dshafer and hit ENTER');
+  <STDIN>;
+  _log('testing pairing challenge login');
+  $RAD_REQUEST{'User-Name'} = 'dshafer';
+  $RAD_REQUEST{'User-Password'} = 'p@ssw0rd';
+  $RAD_REQUEST{'State'} = 'init';
+  croak("Didn't return OK") unless authenticate_ad() == RLM_MODULE_HANDLED;
+  croak("didn't get radius challenge") unless $RAD_REPLY{'State'} eq 'challenge_reply';
+  croak("didn't get correct channenge") unless $RAD_REPLY{'Reply-Message'} eq $config->{'prompts'}{'pairing_challenge'};
+  croak("wrong packet type") unless $RAD_CHECK{'Response-Packet-Type'} eq 'Access-Challenge';
+
+  _log('enter a pairing phrase from mobile device');
+  $RAD_REQUEST{'User-Name'} = 'dshafer';
+  my $pp = <STDIN>;
+  chomp($pp);
+  $RAD_REQUEST{'User-Name'} = 'dshafer';
+  $RAD_REQUEST{'User-Password'} = $pp;
+  $RAD_REQUEST{'State'} = 'challenge_reply';
+  croak("Didn't return OK") unless authenticate_ad() == RLM_MODULE_OK;
+
+
+  _log('authenticating dshafer');
+  $RAD_REQUEST{'User-Name'} = 'dshafer';
+  $RAD_REQUEST{'User-Password'} = 'p@ssw0rd';
+  $RAD_REQUEST{'State'} = 'init';
+  croak("Didn't return OK") unless authenticate_ad() == RLM_MODULE_OK;
+  _log('Should have pushed message to toopher app...');
+}
+
+if($ARGV[0] eq 'test'){
+  test_toopher_rlm_perl();
+} 
 
 1;

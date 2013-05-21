@@ -2,7 +2,7 @@ package ToopherAPI;
 use strict;
 use Net::OAuth::ConsumerRequest;
 use HTTP::Request::Common qw{ GET POST };
-use JSON qw{ decode_json };
+use JSON::XS qw{ decode_json };
 use LWP::UserAgent;
 use Class::Struct;
 use constant DEFAULT_TOOPHER_API => 'https://toopher-api.appspot.com/v1/';
