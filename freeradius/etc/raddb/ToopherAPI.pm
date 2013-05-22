@@ -8,6 +8,12 @@ use Class::Struct;
 use constant DEFAULT_TOOPHER_API => 'https://toopher-api.appspot.com/v1/';
 #use constant DEFAULT_TOOPHER_API => 'https://api.toopher.com/v1/';
 
+sub base_log{
+  print $_[0];
+}
+
+our $_log = \&base_log;
+
 sub new
 {
   my ($class, %args) = @_;

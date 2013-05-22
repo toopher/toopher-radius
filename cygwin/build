@@ -1,0 +1,167 @@
+PERL_VERSION=5.12.3
+FREERAD_VERSION=2.2.0
+
+FREERAD_BUILD=/toopher-freeradius
+
+if `command -v perl >/dev/null 2>&1`
+then
+  # perl is installed
+  PERL=`command -v perl`
+  cp $PERL $PERL.old
+else
+  # no perl - we'll put ours in /usr/local/bin/perl
+  PERL=/usr/local/bin/perl
+fi
+
+echo PERL is $PERL
+
+echo Download/Configure/Build/Install staticperl
+# build and install staticperl to .staticperl/perl/bin
+
+# uncomment the next line to re-install everything from CPAN
+# rm .staticperl/perl/staticstamp.*
+
+# otherwise just do this
+cp -fr .staticperl/src/perl-${PERL_VERSION}/libperl.a .staticperl/perl/bin/libperl.a
+cp -fr .staticperl/src/perl-${PERL_VERSION}/libperl.a .staticperl/perl/lib/CORE/libperl.a
+
+#now (re)build staticperl
+./staticperl fetch
+./staticperl install
+
+
+echo
+echo Installing/Updating CPAN modules.  Some modules might take several attempts.
+# install needed CPAN modules.  This can still fail for unknown reasons, so
+# grep for failure messages and retry for each module
+CPAN_MODULES=( Digest::MD5 YAML LWP::UserAgent Encode Data::Dumper Digest::SHA 
+  Digest::SHA1 Digest::HMAC_SHA1 Net::OAuth::ConsumerRequest Crypt::SSLeay
+  Net::SSLeay JSON::XS JSON Net::LDAP HTTP::Request::Common )
+
+for module in "${CPAN_MODULES[@]}"
+do
+  counter=0
+  mod_install_success=0
+  while [ $mod_install_success -eq 0 ]
+  do
+    let counter=counter+1
+    echo Installing $module \(attempt ${counter}\)
+    ./staticperl instcpan $module 2>&1 | grep -q 'fatal error'
+    mod_install_success=$?
+  done
+done
+
+STATICPERL_OPTS="--noclean -vvv --strip none -MConfig_heavy.pl -MConfig -MJSON::XS \
+  -MJSON -MData::Dumper -MExtUtils::Embed -Mdiagnostics -MFindBin -Mlib \
+  -MNet::OAuth::ConsumerRequest -MHTTP::Request::Common -MEncode \
+  -MNet::LDAP -MExtUtils::MakeMaker -MLWP::UserAgent -MClass::Struct \
+  -MDigest::HMAC_SHA1 \
+  -MNet::OAuth::SignatureMethod::HMAC_SHA1 -MNet::LDAP::Bind \
+  -MNet::LDAP::Search -MURI::_foreign -MHTTP::Config -MURI \
+  -MURI::_server -MURI::file -MURI::http -MURI::https \
+  -MMIME::Base64 \
+  -Mutf8_heavy.pl -Municore/heavy.pl -MScalar::Util -MList::Util -MNet::SSLeay \
+  -MLWP::Protocol::https "
+
+echo STATICPERL_OPTS is ${STATICPERL_OPTS}
+# make a perl executable and libperl that can be statically linked into rlm_perl
+./staticperl mkperl ${STATICPERL_OPTS} || (echo 'Failed to build staticperl' && exit 1)
+
+cp -fr ./libperl.a .staticperl/perl/bin/libperl.a
+cp -fr ./libperl.a .staticperl/perl/lib/CORE/libperl.a
+cp -fr ./perl.exe ${PERL}
+
+#clean up 
+rm *.o
+rm *.a
+rm perl.exe
+
+# now make a perl bundle that can be statically linked into rlm_perl
+./staticperl mkbundle ${STATICPERL_OPTS} || (echo 'Failed to build staticperl bundle' && exit 1)
+
+echo Downloading Freeradius Source
+FREERAD=freeradius-server-${FREERAD_VERSION}
+wget ftp://ftp.freeradius.org/pub/freeradius/${FREERAD}.tar.gz
+
+tar xzvf freeradius-server-${FREERAD_VERSION}.tar.gz
+rm freeradius-server-${FREERAD_VERSION}.tar.gz
+
+FREERAD_PERL=${FREERAD}/src/modules/rlm_perl
+# add static perl bundle to freeradius rlm_perl source dir
+cp -f bundle.c ${FREERAD_PERL}/
+cp -f bundle.h ${FREERAD_PERL}/
+rm bundle.*
+
+# make rlm_perl.c invoke the staticperl xs_init function
+sed -i '/#include <semaphore.h>/ a #include "bundle.h"' ${FREERAD_PERL}/rlm_perl.c
+sed -i '/newXS(\"DynaLoader::boot_DynaLoader\", boot_DynaLoader, file);/ a  staticperl_xs_init();' ${FREERAD_PERL}/rlm_perl.c
+
+# patch rlm_perl Makefile
+#sed -i "s#@perl_cflags@#`cat bundle.ccopts`#g" ${FREERAD_PERL}/Makefile.in
+#sed -i "s#@perl_ldflags@#`cat bundle.ldopts`#g" ${FREERAD_PERL}/Makefile.in
+sed -i "s/rlm_perl.c/rlm_perl.c bundle.c/g" ${FREERAD_PERL}/Makefile.in
+
+# explicitly disable freeradius DHCP, because configure doesn't seem to obey me.
+sed -i "s/WITH_DHCP=yes/WITH_DHCP=no/g" ${FREERAD}/configure
+sed -i "s/WITH_DHCP=yes/WITH_DHCP=no/g" ${FREERAD}/configure.in
+
+# patch the rlm_eap Makefile, because it's broken
+sed -i 's/= radeapclient/= radeapclient$(EXEEXT)/g' ${FREERAD}/src/modules/rlm_eap/Makefile.in
+
+# build freeradius
+pushd ${FREERAD}
+
+# configure freeradius source
+./configure --disable-shared --enable-static --prefix=${FREERAD_BUILD} \
+  --with-rlm_krb5=no --with-rlm_pam=no --with-rlm_eap_ikev2=no --with-rlm_sql_oracle=no \
+  --with-rlm_chap=no --with-rlm_mschap=no --with-rlm_python=no --with-dhcp=no \
+  --with-rlm_wimax=no --with-rlm_ippool=no --with-rlm_otp=no --with-rlm_ldap=no \
+  --with-rlm_otp=no --with-rlm_sql=no --with-rlm_sql_iodbc=no --with-rlm_sql_mysql=no \
+  --with-rlm_sql_postgresql=no --with-rlm_sqlcounter=no --with-rlm_unix=no \
+  --with-rlm_sql_unixodbc=no --with-openssl=yes --with-rlm_dbm=no --with-rlm_eap_ttls=yes \
+  --with-rlm_eap_tnc=yes \
+
+# use make -k because a couple targets fail right now (radmin.exe and radeapclient.exe).
+# TODO: fix so we can do a clean build
+
+make -k
+make -k install
+
+echo ******************************************************************
+echo *****  Certain errors in the above build process are normal  *****
+echo ******************************************************************
+
+popd
+
+echo Moving over some libs that don't seem to play well w/ staticperl
+cp -r .staticperl/perl/lib/Mozilla ${FREERAD_BUILD}/etc/raddb/
+
+echo Replace default freeradius config with toopher-specific stuff
+cp -fr ../freeradius/* ${FREERAD_BUILD}/
+
+echo get rid of the inner-tunnel and control-socket sites
+unlink ${FREERAD_BUILD}/etc/raddb/sites-enabled/inner-tunnel
+unlink ${FREERAD_BUILD}/etc/raddb/sites-enabled/control-socket
+
+
+echo make sure the dictionary files get installed if "make install" barfed
+mkdir -p ${FREERAD_BUILD}/share/freeradius
+cp -r ${FREERAD}/share/dictionary* ${FREERAD_BUILD}/share/freeradius/
+
+# create a shortcut batch file to run the radius server
+echo cd sbin > ${FREERAD_BUILD}/run_toopher_radius.cmd
+echo radiusd.exe -f -d ../etc/raddb -l ../var/log/radius/radius.log >> ${FREERAD_BUILD}/run_toopher_radius.cmd
+
+echo Copying cygwin dlls necessary to run in normal windows environment
+CYGWIN_DLLS=( cygwin1.dll cyggdbm-4.dll )
+for cyg_dll in "${CYGWIN_DLLS[@]}"
+do
+  cp /bin/${cyg_dll} ${FREERAD_BUILD}/sbin/${cyg_dll}
+done
+
+echo Restore old perl
+if [ -e $PERL.old ]
+then
+  rm $PERL
+  mv $PERL.old $PERL
+fi

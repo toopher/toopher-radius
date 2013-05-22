@@ -74,6 +74,9 @@ sub _log {
     &radiusd::radlog(0, $msg);
   }
 }
+
+$ToopherAPI::_log = \&_log;
+
 # Function to handle authorize
 sub authorize {
   $RAD_CHECK{'Auth-Type'} = 'TOOPHER_AD';
