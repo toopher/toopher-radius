@@ -35,7 +35,8 @@ echo Installing/Updating CPAN modules.  Some modules might take several attempts
 # grep for failure messages and retry for each module
 CPAN_MODULES=( Net::OAuth::ConsumerRequest JSON::XS JSON Net::LDAP LWP::Protocol::https )
 
-cpan
+# make sure cpan is configured first
+echo exit | cpan
 for module in "${CPAN_MODULES[@]}"
 do
   counter=0
@@ -44,7 +45,7 @@ do
   do
     let counter=counter+1
     echo Installing $module \(attempt ${counter}\)
-    ./staticperl instcpan $module 2>&1 | grep -q 'fatal error'
+    cpan $module 2>&1 | grep -q 'fatal error'
     mod_install_success=$?
   done
 done
