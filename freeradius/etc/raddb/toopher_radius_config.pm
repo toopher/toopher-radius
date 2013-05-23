@@ -6,8 +6,8 @@ use strict;
   {
     toopher_api => {  
       url   =>  'https://toopher-api-dev.appspot.com/v1/',
-      key   =>  'uDSyNsfBGPgSpEVcXM', 
-      secret=>  '9k5RDbKrhMacqrjtPRSCgrwfVTX5rjm5',
+      key   =>  'YOUR TOOPHER API KEY', 
+      secret=>  'YOUR TOOPHER API SECRET',
       },
     ldap => {
       username =>  'toopher_radius',
