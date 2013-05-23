@@ -1,87 +1,120 @@
-How to set up a Toopher-Protected VPN on Azure in 57 easy steps
+Installing and Configuring the Toopher RADIUS server
 ======================================================
-*(or, why I worked for two weeks and only produced 30 lines of code)*
 
-The goal of this walkthrough is to enabled the reader to set up a cloud-hosted VPN network, with logins optionally protected by Toopher 2-Factor authentication on a per-user basis.  This document uses the Microsoft Azure platform, but the instructions should be able to be adapted to other hosting services or physical machines without difficulty.  Before continuing, make sure you have an Azure account.  We will be setting up one Small VM and one Extra-Small VM, as well as one private network.  This is within the allowance for free usage with a BizSpark account.  At full price, it would probably cost about $70 monthly.
+Toopher uses the popular open-source FreeRadius server as the base for its RADIUS
+solution.
 
-Setting up the Windows-based VPN
---------------------------------
-We will be using Windows 2008 r2 for our VPN / Active Directory server.  Older versions will probably work as well with some changes to the steps.  I have adapted these instructions from a [great walkthrough video](http://youtu.be/QKSNDITI3pE) on YouTube.  That link is recommended viewing before completing this section.
+Set Up LDAP Integration
+-----------------------
+Integrating Toopher into your organization's LDAP schema provides a simple way to administer per-user Toopher settings,
+and is the recommended deployment method. 
 
-Due to architectural limitations of Azure, only SSTP VPNs are possible.  This is slightly more complex than traditional IPSec VPNs, and has the disadvantage of being less compatible with non-windows clients (SSTP clients are available, but the "standard" VPN clients on OSX and Linux will not work).  If you are in an environment that allows creation of an IPSec VPN, you can set up the VPN on your own and then start using this walkthrough at the FreeRadius section (below).
+### Integrating Toopher into Microsoft Active Directory
+The files required for Active Directory integration are in the /ad folder.
 
-### Required Roles
-Your Windows Server needs the following roles installed:
-4. Network Policy and Access Server
+#### Import the Toopher Schema
 
-### Setup Active Directory
-Install Active Directory Domain Services, create a domain (I created vpn.toopher.com), and promote the server to Domain Controller.  I found the Windows 2003 functional level to be adequate both for the Forest and Domain functional levels.  Install DNS when prompted.
+    ldifde -i -f toopher_schema.ldif -c DC=x DC=example,DC=com
 
-### Generate a server certificate
-Install the Active Directory Certificate Services role, and select the "Certification Authority" and "Certification Authority Web Enrollment" role services.  I set up a Standalone Root Certificate server - while this makes the process a bit easier, it also means that your clients by default will not trust the certificates and each client will need to manually import the root certificate in order to log in.  Sorry.  Create a new private key and complete the Add Roles Wizard using the defaults.
-Open IIS Manager and create a temporary self-signed certificate.  Find the default site, and add a HTTPS binding using the self-signed certificate, then open a web browser and navigate to [the AD Certificate Services webpage](https://localhost/certsrv).
-Use the Certificate Services page to request a new server certificate (Request a certificate -> Advanced Request -> Create and submit a request on this CA).  Enter your server name (vpn.toopher.com) and for Type, select "Server Authentication Certificate", and hit Submit.  This creates a pending certificate request that you must acknowledge in Server Manager.  Once you have issued the request through Server Manager, navigate back to [the CA page](https://localhost/certsrv), and click the "View the status of a pending certificate request" link.  Install the issued certificate.
-By default, the certificate gets issued under the user account, but it needs to be moved to the Computer account so it is available for IIS.  To do this, launch Microsoft Management Console (start -> run-> "mmc.exe").  In File -> Add/Remove Snap-In, add two copies of the Certificates snap-in - one for the user account, and one for the local computer account.  Click OK, then move the new certificate from its default location at Current User -> Personal to Local Computer -> Personal.
-Once you have moved the certificate, go back to IIS Manager and set the site to use the new certificate issued by the CA.
+Change DC=example,DC=com to values appropriate for your domain
+
+The schema import will create a new auxilliary user class called toopherProtectedEntity that contains per-user Toopher settings.  Additionally, it will create a new user group called "ToopherAdministrators" that will be allowed to modify the toopherProtectedEntity settings.
+
+After importing the schema changes, you should create a new LDAP user for use by the RADIUS server and add them to the ToopherAdministrators group.
 
 
-### Set up a simple VPN
-Install the Network Policy and Access Server role, and select the "Network Policy Server" and "Routing and Remote Access Services" roles, along with the associated sub-roles.
-Configure Routing and Remote Access in Server Manager (right-click [Roles -> Network Policy and Access Services -> Routing and Remote Access] and select 'Configure...').  Select "Custom Configuration", and in the next screen choose "VPN Access" and "NAT", then complete the wizard.
-Set the SSTP Server Certificate to match IIS: Right-click RRAS and select properties.  In the dialog, under the "Security" tab in "SSL Certificate Binding", select the same certificate that you set for IIS.
-Choose an IP address pool to assign to the clients:  In the IPv4 tab, select "Static address pool", and create a pool of addresses.  I created a range from 192.168.200.100 - 192.168.200.199, allowing up to 99 simultaneously connected clients (one IP is used by the RRAS server).
-Set up NAT - this allows VPN-connected clients to connect to the internet using the VPN server's connection.  Right-click the NAT node (RRAS->IPv4->NAT), and select New Interface.  Choose the interface that handles internet traffic (on Azure, this will be your virtual network connection, which is confusing), and in the next screen, mark it as a "Public interface connected to the Internet" and select "Enable NAT on this interface".
+Installing the RADIUS Server
+-----------------------------
+### Installing on Ubuntu (or other debian-based distro)
+run the provided install-ubuntu.sh script as root:
 
-### Create an Active Directory user
-Open the Active Directory Users and Computers manager, and create a new user/password.  Uncheck the "User must change password..." box, and select OK.
+    cd install && sudo ./install-ubuntu.sh
 
+### Installing on other linux
+Automated install scripts for Redhat and SuSE distros should be available soon.  Until then...
 
-### IMPORTANT!  Manually import the CA certificate
-Since we created our own Root CA, the CA certificate must be manually installed on any clients that will connect to the VPN server.  From a web browser on the client, browse to https://your.vpn.server/certcarc.asp (obviously, replace your.vpn.server with the actual domain name of your VPN server).  Click the first link ("To trust certificates issued from this certificate authority...").
-As with the initial certificate that we requested for the VPN server, this certificate must be manually moved from the "Current User" account to "Local Computer".  Open MMC as before with two instances of the Certificates snap-in, and move the certificate from Current User -> Trusted Root Certification Authorities to Local Computer -> Trusted Root Certification Authorities.
+Install FreeRadius (at least 2.1.10, older builds might work but are untested) using Your Package Manager Of Choice
 
-At this point, you should be able to set up a SSTP VPN connection from a windows-based client.
+Copy all of the Toopher configuration files to the freeradius configuration directory (usually /etc/raddb):
 
-Set up the FreeRADIUS server
-----------------------------
+    sudo cp -r freeradius/etc/raddb/* /etc/raddb/
 
-FreeRADIUS runs on many platforms, including Windows (using CygWin).  In this example, I am going to use Ubuntu Server 12.04 LTS.
+make sure that all of the copied files in /etc/raddb are readable by the freeradius service user
 
-Before you start:
+Install required perl modules:
 
-    sudo apt-get update
-    sudo apt-get upgrade
-    sudo apt-get install build-essential
+    cpan Net::OAuth::ConsumerRequest JSON::XS JSON Net::LDAP LWP::Protocol::https
 
-### Install FreeRADIUS and required perl modules
+*Note - cpan will sometimes fail midway through while installing dependencies.  Just Re-run the command and it should eventually finish without error*
 
-    sudo apt-get install freeradius
+Verify that you can start the FreeRadius server without any perl errors:
 
-apt-get will have automatically started freeradius.  Stop it so we can finish getting it set up.
+    sudo radiusd -Xxx
 
-    sudo service freeradius stop
+If that command completes without errors, you should be good to go. Ctrl-C to exit.
 
-Get a copy of the toopher freeradius configuration files from bitbucket.  Assuming you have checked out the toopher repository under ~/toopher:
+### Installing on Windows
+Please use our prebuilt Cygwin-based server for deployment on Windows.
 
-    sudo cp -r ~/toopher/toopher-vpn/freeradius/etc/raddb/* /etc/freeradius/
-    sudo apt-get install libnet-ssleay-perl
-    sudo cpan JSON Net::OAuth Net::LDAP LWP::Protocol::https DBD:SQLite YAML
+RADIUS Configuration
+--------------------
 
-Edit /etc/freeradius/clients.conf to add your RADIUS client (firewall/NAT/VPN/whatever) to the list of allowed clients
-
-Set the TOOPHER_CONSUMER_KEY and TOOPHER_CONSUMER_SECRET environment variables
-
-Start the radius server in debug mode to make sure it is running correctly:
-
-    sudo freeradius -X
-
-NOTE: if you get an error that looks like
+Before you can run the server, you need to edit /etc/raddb/toopher_radius_config.pm (/etc/freeradius/toopher_radius_config.pm on Ubuntu) to suit your site.
+```perl
+    my $toopher_config =
+    {
+      toopher_api => {
+        url   =>  'https://toopher-api-dev.appspot.com/v1/',
+        key   =>  'YOUR TOOPHER API KEY',
+        secret=>  'YOUR TOOPHER API SECRET',
+        },
+      ldap => {
+        username =>  'toopher_radius',
+        password =>  'p@ssw0rd',
+        host  =>     '127.0.0.1',
+        principal => 'example.toopher.com',
+        dc        => 'DC=example,DC=toopher,DC=com',
+        },
+      prompts => {
+        pairing_challenge => 'Toopher 2-factor authentication is enabled for your account.  Please enter the pairing phrase generated by the Toopher mobile app:'
+        }
+    };
 ```
-#!text
-    Can't load '/usr/lib/perl/5.14/auto/Data/Dumper/Dumper.so' for module Data::Dumper: /usr/lib/perl/5.14/auto/Data/Dumper/Dumper.so: undefined symbol: PL_charclass at ...
-```
 
-There is an issue with FreeRadius dynamically loading the perl module.  You can workaround this issue by explicitly loading the module:
+At a minimum, you must change the "key" and "secret" values in the
+toopher_api section.  You can generate new requester credentials at the 
+[Toopher Developer Site](https://dev.toopher.com).
 
-    sudo LD_PRELOAD=/usr/lib/libperl.so.5.14 freeradius -X
+Most users will also need to edit the ldap section to point to their
+ActiveDirectory or other LDAP server.  The username/password should be
+a LDAP user that belongs to the ToopherAdministators group.
 
+Additionally, you may customize the prompt displayed to users when they initially pair their device with Toopher.  The maximum length of this prompt is 253 characters due to technical limitations of the RADIUS specification.
+
+Start the RADIUS server
+-----------------------
+
+    sudo service freeradius start    # or service radiusd start, depending on the distro
+
+Add Toopher Protection to Individual Users
+------------------------------------------
+
+On Windows systems, users can be easily managed using the toopher-admin.bat script.
+
+* Enable Toopher protection for a user:
+
+    toopher-admin enable [username]
+
+* Reset a user's pairing (for instance, if they get a new mobile device and want to change their pairing):
+
+    toopher-admin reset-pairing [username]
+
+* Disable Toopher security for a user (pairing information will be kept):
+
+    toopher-admin disable [username]
+
+* Show a list of all Toopher-enabled users:
+
+    toopher-admin show-users
+
+Linux-based administration tools are coming soon...
