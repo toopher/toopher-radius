@@ -45,7 +45,7 @@ Install required perl modules:
 
     cpan Net::OAuth::ConsumerRequest JSON::XS JSON Net::LDAP LWP::Protocol::https
 
-*Note - cpan will sometimes fail midway through while installing dependencies.  Just Re-run the command and it should eventually finish without error*
+*Note - cpan will sometimes fail midway through while installing dependencies.  Just re-run the command and it should eventually finish without error*
 
 Verify that you can start the FreeRadius server without any perl errors:
 
@@ -101,19 +101,19 @@ Add Toopher Protection to Individual Users
 
 On Windows systems, users can be easily managed using the toopher-admin.bat script.
 
-* Enable Toopher protection for a user:
+Enable Toopher protection for a user:
 
     toopher-admin enable [username]
 
-* Reset a user's pairing (for instance, if they get a new mobile device and want to change their pairing):
+Reset a user's pairing (for instance, if they get a new mobile device and want to change their pairing):
 
     toopher-admin reset-pairing [username]
 
-* Disable Toopher security for a user (pairing information will be kept):
+Disable Toopher security for a user (pairing information will be kept):
 
     toopher-admin disable [username]
 
-* Show a list of all Toopher-enabled users:
+Show a list of all Toopher-enabled users:
 
     toopher-admin show-users
 
