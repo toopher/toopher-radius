@@ -318,7 +318,7 @@ post-proxy {
 	#  hidden inside of the EAP packet, and the end server will
 	#  reject the EAP request.
 	#
-	eap
+#	eap
 
 	#
 	#  If the server tries to proxy a request and fails, then the

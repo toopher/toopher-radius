@@ -27,7 +27,6 @@ use strict;
 #use diagnostics;
 use FindBin;
 use lib "$FindBin::Bin/";
-use lib "$FindBin::Bin/lib";
 use Carp;
 $Carp::Verbose = 1;
 
@@ -39,8 +38,6 @@ use vars qw(%RAD_REQUEST %RAD_REPLY %RAD_CHECK %RAD_CONFIG);
 
 use ToopherAPI;
 use Net::LDAP;
-#use YAML;
-#use JSON qw{ decode_json };
 use toopher_radius_config;
 use Data::Dumper;
 use Net::OAuth::SignatureMethod::HMAC_SHA1;
@@ -58,10 +55,12 @@ use constant    RLM_MODULE_NUMCODES=>  9;#  /* How many return codes there are *
 
 our $api;
 
-#$config = YAML::LoadFile('toopher_radius_config.yaml');
-#my $contents = do { local $/; local @ARGV = "toopher_radius_config.json"; <> };
-#$config = decode_json($contents);
 my $config = toopher_radius_config::get_config;
+
+if($config->{'toopher_api'}{'key'} eq 'YOUR TOOPHER API KEY'){
+  die("Before using the Toopher RADIUS server you must edit toopher_radius_config.pm to set your Requester API Credentials.');
+}
+
 $api = ToopherAPI->new(key=>$config->{'toopher_api'}{'key'},
                           secret=>$config->{'toopher_api'}{'secret'},
                           api_url=>$config->{'toopher_api'}{'url'});
