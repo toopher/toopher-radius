@@ -58,7 +58,7 @@ our $api;
 my $config = toopher_radius_config::get_config;
 
 if($config->{'toopher_api'}{'key'} eq 'YOUR TOOPHER API KEY'){
-  die("Before using the Toopher RADIUS server you must edit toopher_radius_config.pm to set your Requester API Credentials.');
+  die("Before using the Toopher RADIUS server you must edit toopher_radius_config.pm to set your Requester API Credentials.\n");
 }
 
 $api = ToopherAPI->new(key=>$config->{'toopher_api'}{'key'},

@@ -168,3 +168,7 @@ then
   rm $PERL
   mv $PERL.old $PERL
 fi
+
+
+echo creating toopher_cygwin_freeradius.tgz
+tar czvf toopher_cygwin_freeradius.tgz /toopher-freeradius
