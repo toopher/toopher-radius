@@ -5,7 +5,7 @@ use strict;
   my $toopher_config = 
   {
     toopher_api => {  
-      url   =>  'https://toopher-api-dev.appspot.com/v1/',
+      url   =>  'https://api.toopher.com/v1/',
       key   =>  'YOUR TOOPHER API KEY', 
       secret=>  'YOUR TOOPHER API SECRET',
       },
