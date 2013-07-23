@@ -46,7 +46,7 @@ REM subroutines
 	echo   show-users               : list users who currently have 
 	echo                              Toopher 2-factor authentication enabled
 	goto :EOF
-	
+
 :GET_USER_AND_TOOPHER_ADMIN_DN
 	IF [%USERNAME%] == [] call PROMPT_FOR_USERNAME
 	REM get the FQDN for ToopherAdministrators and the user, as well as the Users container
@@ -57,11 +57,12 @@ REM subroutines
 	set /p USER_DN= < toopher_temp.dn
 	del toopher_temp.dn
 	goto :EOF
-	
+
 :REVOKE_TOOPHER_ADMIN_ACCESS_TO_USER
 	REM Remove existing Toopher ACIs on the user
 	dsacls %USER_DN% /R %TOOPHER_ADMINS% >NUL
 	goto :EOF
+
 :GRANT_TOOPHER_ADMIN_ACCESS_TO_USER
 	REM revoke existing Toopher Admin ACIs to prevent duplicate rules
 	call :REVOKE_TOOPHER_ADMIN_ACCESS_TO_USER
