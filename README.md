@@ -28,7 +28,7 @@ Installing the RADIUS Server
 ### Installing on Ubuntu (or other debian-based distro)
 run the provided install-ubuntu.sh script as root:
 
-    cd install && sudo ./install-ubuntu.sh
+    cd linux && sudo ./install-ubuntu.sh
 
 ### Installing on other linux
 Automated install scripts for Redhat and SuSE distros should be available soon.  Until then...

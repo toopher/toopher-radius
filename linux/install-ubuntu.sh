@@ -45,7 +45,7 @@ do
   do
     let counter=counter+1
     echo Installing $module \(attempt ${counter}\)
-    cpan $module 2>&1 | grep -q 'fatal error'
+    yes | cpan $module 2>&1 | grep -q 'fatal error'
     mod_install_success=$?
   done
 done
