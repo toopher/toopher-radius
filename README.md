@@ -26,7 +26,7 @@ After importing the schema changes, you should create a new LDAP user for use by
 Installing the RADIUS Server
 -----------------------------
 ### Installing on Ubuntu (or other debian-based distro)
-ensure that the `build-essential` package is installed, and CPAN in up-to-date:
+ensure that the `build-essential` package is installed, and `CPAN` in up-to-date:
 
     sudo apt-get install build-essential
     sudo cpan CPAN
@@ -63,6 +63,13 @@ Please use our prebuilt Cygwin-based server for deployment on Windows.
 
 RADIUS Configuration
 --------------------
+Add the IP address of your VPN solution to /etc/raddb/clients.conf.  This will vary according to your network environment.  As an example, to add a VPN client named `PA_VM` accessiable at local IP address of `172.16.42.201` with RADIUS secret `s3cr3t`, add the following four lines to `clients.conf`: 
+
+   client PA_VM {
+        ipaddr = 172.16.42.201
+        secret = s3cr3t
+   }
+
 
 Before you can run the server, you need to edit /etc/raddb/toopher_radius_config.pm (/etc/freeradius/toopher_radius_config.pm on Ubuntu) to suit your site.
 ```perl
@@ -104,7 +111,7 @@ Start the RADIUS server
 Add Toopher Protection to Individual Users
 ------------------------------------------
 
-On Windows systems, users can be easily managed using the toopher-admin.bat script.
+On Windows systems, users can be easily managed using the toopher-admin.bat script.  *Note - if errors are encountered executing the `toopher-admin.bat` script, ensure that the file is using Windows-style (CRLF) line endings*
 
 Enable Toopher protection for a user:
 
