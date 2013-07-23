@@ -26,6 +26,11 @@ After importing the schema changes, you should create a new LDAP user for use by
 Installing the RADIUS Server
 -----------------------------
 ### Installing on Ubuntu (or other debian-based distro)
+ensure that the `build-essential` package is installed, and CPAN in up-to-date:
+
+    sudo apt-get install build-essential
+    sudo cpan CPAN
+
 run the provided install-ubuntu.sh script as root:
 
     cd linux && sudo ./install-ubuntu.sh
