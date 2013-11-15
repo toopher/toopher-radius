@@ -2,6 +2,11 @@
 #
 #  $Id$
 
+perl do_toopher_auth {
+  module = ${confdir}/do_toopher_auth.pl
+  func_authenticate = authenticate_zrs
+}
+
 perl do_toopher_ad_auth {
   module = ${confdir}/do_toopher_auth.pl
   func_authenticate = authenticate_ad

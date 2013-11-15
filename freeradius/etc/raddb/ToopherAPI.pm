@@ -2,6 +2,7 @@ package ToopherAPI;
 use strict;
 use warnings;
 
+use Data::Dumper;
 use Net::OAuth::ConsumerRequest;
 use HTTP::Request::Common qw{ GET POST };
 use JSON qw{ decode_json };
@@ -36,7 +37,7 @@ sub new
 
   my $api_url = $args{'api_url'} ? $args{'api_url'} : DEFAULT_TOOPHER_API;
 
-  my $ua = $args{'ua'} ? $args{'ua'} : LWP::UserAgent::new();
+  my $ua = $args{'ua'} ? $args{'ua'} : LWP::UserAgent->new;
   my $self = {
     _api_url => $api_url,
     _ua => $ua,
@@ -68,7 +69,7 @@ sub authenticate_by_user_name
   my $params = $extras || {};
   $params->{'user_name'} = $user_name;
   $params->{'terminal_name_extra'} = $terminal_name_extra;
-  return $self->authenticate('','',$action_name, $params);
+  return $self->authenticate( '', '', $action_name, $params);
 }
 
 sub authenticate
@@ -252,6 +253,8 @@ sub _parse_request_error
         if (($errObj->{'error_message'} =~ /pairing has been deactivated/i)
             || ($errObj->{'error_message'} =~ /pairing has not been authorized/i)) {
           die ERROR_PAIRING_DEACTIVATED;
+        } else {
+          die $response->status_line . ' ' . $response->content;
         }
       }
     } else {
