@@ -5,19 +5,43 @@ authorize {
 
 
 authenticate {
-  Auth-Type TOOPHER_AD {
-    do_toopher_ad_auth
-    update reply {
-      Toopher-Pairing-Id !* 0
+  Auth-Type TOOPHER_LDAP {
+    if (State == "0x6368616c6c656e67655f73746174655f70616972") {
+      # pair
+      handle_pairing_challenge_reply
     }
-}
+    elsif (State == "0x6368616c6c656e67655f73746174655f6f7470") {
+      # enter OTP
+      handle_otp_challenge_reply
+    }
+    else {
+      # normal (init) state - check password in ldap, then do toopher auth
+      ldap
+      if ( Ldap-Group == ToopherUsers ) {
+        # Ldap-Group is a "magic" attribute defined by rlm_ldap
+        do_toopher_auth
+      }
+    }
+  }
 
   Auth-Type TOOPHER_PAP {
-    pap
-    do_toopher_simple_auth
-    update reply {
-      Toopher-Pairing-Id !* 0
+    if (State == "0x6368616c6c656e67655f73746174655f70616972") {
+      # pair
+      handle_pairing_challenge_reply
     }
+    elsif (State == "0x6368616c6c656e67655f73746174655f6f7470") {
+      # enter OTP
+      handle_otp_challenge_reply
+    }
+    else {
+      # normal (init) state - check password in pap, then do toopher auth
+      pap
+      do_toopher_auth
+    }
+  }
+
+  Auth-Type PAP {
+    pap
   }
 
 }

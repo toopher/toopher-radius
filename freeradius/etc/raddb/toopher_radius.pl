@@ -38,13 +38,12 @@ my $testmode = $ARGV[0];
 use vars qw(%RAD_REQUEST %RAD_REPLY %RAD_CHECK %RAD_CONFIG);
 
 use ToopherAPI;
-use Net::LDAP;
 use toopher_radius_config;
 use Data::Dumper;
 use Net::OAuth::SignatureMethod::HMAC_SHA1;
 
-use constant    CHALLENGE_STATE_PAIR=> 'challenge_state_pair';
-use constant    CHALLENGE_STATE_OTP => 'challenge_state_otp';
+use constant    CHALLENGE_STATE_PAIR=> '0x6368616c6c656e67655f73746174655f70616972'; # unpack('H*', 'challenge_state_pair');
+use constant    CHALLENGE_STATE_OTP => '0x6368616c6c656e67655f73746174655f6f7470';   # unpack('H*', 'challenge_state_otp');
 
 use constant    RLM_MODULE_REJECT=>    0;#  /* immediately reject the request */
 use constant    RLM_MODULE_FAIL=>      1;#  /* module failed, don't reply */
@@ -73,7 +72,9 @@ sub _log {
 $ToopherAPI::_log = \&_log;
 
 sub issue_pairing_challenge_prompt {
+  _log('issue_pairing_challenge_prompt');
   $RAD_REPLY{'State'} = CHALLENGE_STATE_PAIR;
+  $RAD_REPLY{'Prompt'} = 'Echo';
   $RAD_REPLY{'Reply-Message'} = $config->{'prompts'}{'pairing_challenge'};
   $RAD_CHECK{'Response-Packet-Type'} = 'Access-Challenge';
   return RLM_MODULE_HANDLED;
@@ -88,16 +89,17 @@ sub issue_otp_challenge_prompt {
 
 sub poll_for_auth {
   my ($auth) = @_;
-  my $poll_count = 0;
+  _log('poll_for_auth');
+  my $start_time = time();
   while($auth->pending){
     sleep(1);
     try {
+      _log('  getting status from Toopher API');
       $auth = $api->get_authentication_status($auth->id);
     } catch {
-      return fail('Error contacting the Toopher API: ' . $_);
+      return &fail('Error contacting the Toopher API: ' . $_);
     };
-    $poll_count++;
-    if ($poll_count > $config->{'toopher_api'}{'poll_timeout'}){
+    if (time() - $start_time > $config->{'toopher_api'}{'poll_timeout'}){
       return &issue_otp_challenge_prompt();
     }
   }
@@ -108,27 +110,33 @@ sub poll_for_auth {
     return RLM_MODULE_REJECT;
   } 
 }
+
 sub check_with_toopher {
   my ($toopherPairingId, $toopherTerminalName) = @_;
   
-  return poll_for_auth($api->authenticate($toopherPairingId, $toopherTerminalName));
+  return &poll_for_auth($api->authenticate($toopherPairingId, $toopherTerminalName));
 }
 
 sub pair_with_toopher {
   my ($pairingPhrase, $userName) = @_;
+
   my $pairing;
   try {
     $pairing = $api->pair($pairingPhrase, $userName);
   } catch {
-    return fail("Error while pairing: " . $_);
+    return &fail("Error while pairing: " . $_);
   };
+  my $start_time = time();
 
   while(!$pairing->enabled){
     sleep(1);
     try {
       $pairing = $api->get_pairing_status($pairing->id);
+      if (time() - $start_time > $config->{'toopher_api'}{'poll_timeout'}){
+        return &fail("Timeout while waiting for pairing completion");
+      }
     } catch {
-      return fail("Error contacting the Toopher API: " . $_);
+      return &fail("Error contacting the Toopher API: " . $_);
     };
   }
   if($pairing->enabled){
@@ -140,30 +148,25 @@ sub pair_with_toopher {
 }
 
 
-# just do Toopher authentication.  Assumes some other module is handling primary authentication
-sub authenticate_simple {
-  if (defined $RAD_REPLY{'Toopher-Pairing-Id'}){
-    return &check_with_toopher($RAD_REPLY{'Toopher-Pairing-Id'}, undef, undef, 'false');
-  } else {
-    return RLM_MODULE_OK;
-  }
-}
-
 # Zero-requester-storage authentication
 sub authenticate_zrs {
   my $username = $RAD_REQUEST{'User-Name'};
   my $terminal_identifier = "";
-  foreach my $term_id_attr_name ($config->{'terminal_identifier'}) {
+  foreach my $term_id_attr_name (@{$config->{'terminal_identifier'}}) {
+    _log('adding terminal identifier attribute: ' . $term_id_attr_name);
     $terminal_identifier .= $RAD_REQUEST{$term_id_attr_name};
   }
   try {
     return poll_for_auth($api->authenticate_by_user_name($username, $terminal_identifier));
   } catch {
+    chomp();
+    _log('Caught error on request: ' . $_);
     if ($_ eq ToopherAPI::ERROR_USER_DISABLED) {
       return RLM_MODULE_OK;
-    } elsif ($_ eq ToopherAPI::ERROR_UNKNOWN_USER) {
+    } elsif ($_ eq ToopherAPI::ERROR_USER_UNKNOWN) {
       return &issue_pairing_challenge_prompt();
-    } elsif ($_ eq ToopherAPI::ERROR_UNKNOWN_TERMINAL) {
+    } elsif ($_ eq ToopherAPI::ERROR_TERMINAL_UNKNOWN) {
+      _log('unknown terminal error...');
       # can't really deal with this in a RADIUS context due to UI restrictions
     } elsif ($_ eq ToopherAPI::ERROR_PAIRING_DEACTIVATED) {
       return &issue_pairing_challenge_prompt();
@@ -174,63 +177,6 @@ sub authenticate_zrs {
   };    
 }
 
-sub authenticate_ad_username_password {
-  my $username = $RAD_REQUEST{'User-Name'};
-  my $passwd = $RAD_REQUEST{'User-Password'};
-  my $ldap = Net::LDAP->new($config->{'ldap'}{'host'}) or die "$@";
-  my $message = $ldap->bind($username . '@' . $config->{'ldap'}{'principal'}, password => $passwd);
-  if ($message->is_error){
-    _log('bad initial bind');
-    $RAD_REPLY{'Reply-Message'} = 'bad username or password';
-    return RLM_MODULE_REJECT;
-  }
-  my $toopherPairingId = '';
-  my $doToopherAuthOnLogin = 0;
-  my $userCN = '';
-  if (defined $RAD_REPLY{'Toopher-Pairing-Id'}){
-    # Toopher pairing info supplied from some other source, don't look for it in AD
-    $toopherPairingId = $RAD_REPLY{'Toopher-Pairing-Id'};
-    $doToopherAuthOnLogin = 1;
-    undef $RAD_REPLY{'Toopher-Pairing-Id'};
-  } else {
-    my $search = $ldap->search(
-      base => $config->{'ldap'}{'dc'},
-      filter => "(&(objectCategory=Person)(objectClass=User)(sAMAccountName=" . $username . "))");
-    my @entries = $search->entries;
-    if (length(@entries) != 1) {
-
-      $RAD_REPLY{'REPLY_MESSAGE'} = 'Unexpected error querying active directory!';
-      return RLM_MODULE_REJECT;
-    }
-    $userCN = $entries[0]->get_value('cn');
-    if ($entries[0]->exists('toopherPairingID')){
-      $toopherPairingId = $entries[0]->get_value('toopherPairingID');
-    }
-    if ($entries[0]->exists('toopherAuthenticateLogon')){
-      $doToopherAuthOnLogin = $entries[0]->get_value('toopherAuthenticateLogon') eq 'TRUE';
-    }
-  }
-  if ($doToopherAuthOnLogin){
-    if($toopherPairingId){
-      return &check_with_toopher($toopherPairingId, $RAD_REQUEST{'Calling-Station-Id'});
-    } else {
-      return &issue_pairing_challenge_prompt();
-    }
-    my $auth = $api->authenticate($toopherPairingId, $RAD_REQUEST{'Calling-Station-Id'});
-    while($auth->pending){
-      sleep(1);
-      $auth = $api->get_authentication_status($auth->id);
-    }
-    if($auth->granted){
-      return RLM_MODULE_OK;
-    } else {
-      $RAD_REPLY{'Reply-Message'} = 'Failed toopher authentication: ' . $auth->reason;
-      return RLM_MODULE_REJECT;
-    } 
-  } else {
-    return RLM_MODULE_OK;
-  }
-}
 
 sub fail
 {
@@ -253,6 +199,7 @@ sub handle_pairing_challenge_reply
 
 sub handle_otp_challenge_reply
 {
+  _log('handle_otp_challenge_reply');
   my $username = $RAD_REQUEST{'User-Name'};
   my $otp = $RAD_REQUEST{'User-Password'};
   try {
@@ -261,118 +208,56 @@ sub handle_otp_challenge_reply
       return RLM_MODULE_OK;
     } else {
       $RAD_REPLY{'Reply-Message'} = $auth->reason;
+      _log(Dumper($auth));
       return RLM_MODULE_REJECT;
     }
   } catch {
+    _log('Error while submitting OTP: ' . $_);
     return fail('Failed to authenticate with the Toopher API');
   }
-}
-sub handle_pairing_challenge_reply_ad{
-  my $username = $RAD_REQUEST{'User-Name'};
-  my $pairing_phrase = $RAD_REQUEST{'User-Password'};
-
-  my $ldap = Net::LDAP->new($config->{'ldap'}{'host'}) or die "$@";
-  my $message = $ldap->bind($config->{'ldap'}{'username'} . '@' . $config->{'ldap'}{'principal'}, password => $config->{'ldap'}{'password'});
-  if ($message->is_error){
-    _log('unable to bind to radius client user account');
-    _log('ldap return code is ' . $message->code());
-  }
-  my $search = $ldap->search(
-    base => $config->{'ldap'}{'dc'},
-    filter => "(&(objectCategory=Person)(objectClass=User)(sAMAccountName=" . $username . "))");
-  my @entries = $search->entries;
-  if (length(@entries) != 1) {
-    return fail('Unexpected error querying active directory!');
-  }
-  my $ldapUser = $entries[0];
-  my $userCN = $ldapUser->get_value('CN');
-  
-  my $pairingId = &pair_with_toopher($pairing_phrase, $userCN);
-  if(!$pairingId){
-    _log("Failed to pair user $username");
-    return fail('Failed to pair account with ToopherAPI');
-  }
-  _log("Paired user $username with Toopher.  Pairing id=$pairingId");
-
-  $message = $ldapUser->add( toopherPairingID => $pairingId )->update($ldap);
-  if ($message->is_error){
-    _log('unable to update user account with Toopher Pairing ID.');
-    _log('ldap return code is ' . $message->code());
-  }
-
-  return RLM_MODULE_OK;
 }
 
 sub do_authentication_state_machine
 {
   my ($authentication_func, $pairing_func, $otp_func) = @_;
+  _log('do_authentication_state_machine');
+  foreach my $foo (qw(%RAD_REQUEST %RAD_REPLY %RAD_CHECK %RAD_CONFIG)) {
+    _log('  ' . $foo);
+    my %hsh = eval($foo);
+    foreach my $k (keys %hsh) {
+      _log('    ' . $k . ' -> ' . $RAD_REQUEST{$k});
+    }
+  }
+  _log("-----------");
   my $state = 'init';
   if($RAD_REQUEST{'State'}){
-    if($RAD_REQUEST{'State'} =~ /^0x/){
-      $state = pack('H*', substr($RAD_REQUEST{'State'}, 2));
-    } else {
-      $state = $RAD_REQUEST{'State'};
-    }
+    $state = $RAD_REQUEST{'State'};
     $RAD_REQUEST{'State'} = 'init';
   }
+  my $result;
   if($state eq 'init'){
-    return $authentication_func->();
+    $result = $authentication_func->();
   } elsif($state =~ CHALLENGE_STATE_PAIR){
-    return $pairing_func->();
+    _log('  CHALLENGE_STATE_PAIR');
+    $result = $pairing_func->();
   } elsif($state =~ CHALLENGE_STATE_OTP){
-    return $otp_func->();
+    _log('  CHALLENGE_STATE_OTP');
+    $result = $otp_func->();
   } else {
     $RAD_REPLY{'Reply-Message'} = 'unknown State message: ' . $state;
     $RAD_REPLY{'State'} = 'init';
-    return RLM_MODULE_REJECT;
+    $result = RLM_MODULE_REJECT;
   }
-}
-
-# authenticate through Active Directory, then do Toopher authentication
-sub authenticate_ad {
-  return do_authentication_state_machine(\&authenticate_ad_username_password, \&handle_pairing_challenge_reply_ad, \&handle_otp_challenge_reply);
+  _log('RAD_REPLY:');
+  for my $k (keys %RAD_REPLY) {
+    _log("  $k : " . $RAD_REPLY{$k});
+  }
+  return $result;
 }
 
 sub authenticate_zrs_entry {
+  _log('authenticate_zrs_entry');
   return do_authentication_state_machine(\&authenticate_zrs, \&handle_pairing_challenge_reply, \&handle_otp_challenge_reply);
-}
-
-sub test_ad_toopher_rlm_perl {
-  print('disable toopher for user dshafer and hit ENTER');
-  <STDIN>;
-  _log('testing simple login');
-  $RAD_REQUEST{'User-Name'} = 'dshafer';
-  $RAD_REQUEST{'User-Password'} = 'p@ssw0rd';
-  $RAD_REQUEST{'State'} = 'init';
-  croak("Didn't return OK") unless authenticate_ad() == RLM_MODULE_OK;
-  _log('OK.');
-  print('enable toopher for user dshafer and hit ENTER');
-  <STDIN>;
-  _log('testing pairing challenge login');
-  $RAD_REQUEST{'User-Name'} = 'dshafer';
-  $RAD_REQUEST{'User-Password'} = 'p@ssw0rd';
-  $RAD_REQUEST{'State'} = 'init';
-  croak("Didn't return OK") unless authenticate_ad() == RLM_MODULE_HANDLED;
-  croak("didn't get radius challenge") unless $RAD_REPLY{'State'} eq 'challenge_reply';
-  croak("didn't get correct channenge") unless $RAD_REPLY{'Reply-Message'} eq $config->{'prompts'}{'pairing_challenge'};
-  croak("wrong packet type") unless $RAD_CHECK{'Response-Packet-Type'} eq 'Access-Challenge';
-
-  _log('enter a pairing phrase from mobile device');
-  $RAD_REQUEST{'User-Name'} = 'dshafer';
-  my $pp = <STDIN>;
-  chomp($pp);
-  $RAD_REQUEST{'User-Name'} = 'dshafer';
-  $RAD_REQUEST{'User-Password'} = $pp;
-  $RAD_REQUEST{'State'} = 'challenge_reply';
-  croak("Didn't return OK") unless authenticate_ad() == RLM_MODULE_OK;
-
-
-  _log('authenticating dshafer');
-  $RAD_REQUEST{'User-Name'} = 'dshafer';
-  $RAD_REQUEST{'User-Password'} = 'p@ssw0rd';
-  $RAD_REQUEST{'State'} = 'init';
-  croak("Didn't return OK") unless authenticate_ad() == RLM_MODULE_OK;
-  _log('Should have pushed message to toopher app...');
 }
 
 sub unittest_toopher_rlm_perl
@@ -428,6 +313,7 @@ sub instantiate_toopher_api
 }
 
 if($ARGV[0] eq 'unittest'){
+  _log('running unittests');
   # H/T to http://perldesignpatterns.com/?InnerClasses for this "inner class" design pattern
   my $ua = eval {
     package UA_Mock;
@@ -469,6 +355,16 @@ if($ARGV[0] eq 'unittest'){
 } elsif($ARGV[0] eq 'test'){
   instantiate_toopher_api();
   test_ad_toopher_rlm_perl();
+} elsif($ARGV[0] eq 'reset-pairing') {
+  my $user_name = $ARGV[1];
+  die ("Usage: $0 reset-pairing [username]\n") unless $user_name;
+  try {
+    instantiate_toopher_api();
+    $api->deactivate_pairings_for_username($user_name);
+    print("OK\n");
+  } catch {
+    die("Error while resetting user pairing: $_\n");
+  };
 } else {
   instantiate_toopher_api();
 }

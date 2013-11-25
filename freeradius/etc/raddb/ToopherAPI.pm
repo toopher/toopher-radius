@@ -2,21 +2,21 @@ package ToopherAPI;
 use strict;
 use warnings;
 
-use Data::Dumper;
 use Net::OAuth::ConsumerRequest;
 use HTTP::Request::Common qw{ GET POST };
 use JSON qw{ decode_json };
 use LWP::UserAgent;
 use Class::Struct;
 use URI::Escape;
+use constant VERSION => "1.1.0";
 use constant DEFAULT_TOOPHER_API => 'https://api.toopher.com/v1/';
 use constant ERROR_CODE_USER_DISABLED => 704;
-use constant ERROR_CODE_UNKNOWN_USER => 705;
-use constant ERROR_CODE_UNKNOWN_TERMINAL => 706;
-use constant ERROR_USER_DISABLED => "The specified user has disabled Toopher Authentication\n";
-use constant ERROR_UNKNOWN_USER => "No matching user exists\n";
-use constant ERROR_UNKNOWN_TERMINAL => "No matching terminal exists\n";
-use constant ERROR_PAIRING_DEACTIVATED => "Pairing has been deactivated\n";
+use constant ERROR_CODE_USER_UNKNOWN => 705;
+use constant ERROR_CODE_TERMINAL_UNKNOWN => 706;
+use constant ERROR_USER_DISABLED => "The specified user has disabled Toopher Authentication";
+use constant ERROR_USER_UNKNOWN => "No matching user exists";
+use constant ERROR_TERMINAL_UNKNOWN => "No matching terminal exists";
+use constant ERROR_PAIRING_DEACTIVATED => "Pairing has been deactivated";
 
 sub base_log{
   print $_[0];
@@ -37,7 +37,7 @@ sub new
 
   my $api_url = $args{'api_url'} ? $args{'api_url'} : DEFAULT_TOOPHER_API;
 
-  my $ua = $args{'ua'} ? $args{'ua'} : LWP::UserAgent->new;
+  my $ua = $args{'ua'} ? $args{'ua'} : LWP::UserAgent->new();
   my $self = {
     _api_url => $api_url,
     _ua => $ua,
@@ -57,6 +57,7 @@ sub pair
   $params->{'user_name'} = $user_name;
   return _pairingStatusFromJson($self->post('pairings/create', $params));
 }
+
 sub get_pairing_status
 {
   my($self, $pairing_request_id) = @_;
@@ -69,7 +70,7 @@ sub authenticate_by_user_name
   my $params = $extras || {};
   $params->{'user_name'} = $user_name;
   $params->{'terminal_name_extra'} = $terminal_name_extra;
-  return $self->authenticate( '', '', $action_name, $params);
+  return $self->authenticate('','',$action_name, $params);
 }
 
 sub authenticate
@@ -97,7 +98,7 @@ sub get_authentication_status_with_otp
   return _authenticationStatusFromJson($self->post('authentication_requests/' . $authentication_request_id . '/otp_auth', $params));
 }
 
-sub assign_user_friendly_name_to_terminal
+sub create_user_terminal
 {
   my ($self, $user_name, $terminal_name, $terminal_name_extra) = @_;
   my $params = {
@@ -129,6 +130,42 @@ sub set_toopher_enabled_for_user
     'disable_toopher_auth' => $enabled ? 'false' : 'true',
   };
   return $self->post('users/' . $user_id, $params);
+}
+
+sub deactivate_pairings_for_username
+{
+  my ($self, $user_name) = @_;
+  my $params = {
+    'name' => $user_name,
+  };
+
+  my @users = @{$self->get('users', $params)};
+
+  foreach my $user_obj (@users) {
+    my @pairings = @{$self->_get_user_pairings($user_obj)};
+    foreach my $pairing (@pairings) {
+      if ($pairing->{'enabled'} && !($pairing->{'deactivated'})){
+        $params = {
+	  'deactivated' => 'True',
+	};
+	$_log->("  Deactivating pairing ID=" . $pairing->{'id'});
+	$self->_update_pairing($pairing, $params);
+      }
+    }
+  }
+
+}
+
+sub _get_user_pairings
+{
+  my ($self, $user_obj) = @_;
+  return $self->get('users/' . $user_obj->{'id'} . '/pairings');
+}
+
+sub _update_pairing
+{
+  my ($self, $pairing, $params) = @_;
+  return $self->post('pairings/' . $pairing->{'id'}, $params);
 }
 
 struct(
@@ -184,17 +221,18 @@ sub _authenticationStatusFromJson
 sub get
 {
   my ($self, $endpoint, $params) = @_;
+  $params = $params || {};
   if ($params) {
     $endpoint .= '?';
     my $separator = '';
     foreach my $key (keys %{$params}){
-      $endpoint = $endpoint . $key . '=' . uri_escape(${$params}{$key}) . $separator;
+      $endpoint = $endpoint . $separator . $key . '=' . uri_escape(${$params}{$key});
       $separator = '&';
     }
   }
   my $url = $self->{'_api_url'} . $endpoint;
   my $req = GET $url;
-  return $self->request($req, {});
+  return $self->request($req, $params);
 }
 sub post
 {
@@ -220,6 +258,8 @@ sub request
   $oaRequest->sign;
 
   $req->header('Authorization' => $oaRequest->to_authorization_header);
+  $req->header('User-Agent' => "toopher-perl/" . VERSION . " (perl " . $] . " on " . $^O . ")");
+  
   my $response = $self->{_ua}->request($req);
 
   if ($response->code >= 300) {
@@ -244,19 +284,20 @@ sub _parse_request_error
     };
     if ($errObj) {
       if($errObj->{'error_code'} == ERROR_CODE_USER_DISABLED) {
-        die ERROR_USER_DISABLED;
-      } elsif ($errObj->{'error_code'} == ERROR_CODE_UNKNOWN_USER) {
-        die ERROR_UNKNOWN_USER;
-      } elsif ($errObj->{'error_code'} == ERROR_CODE_UNKNOWN_TERMINAL) {
-        die ERROR_UNKNOWN_TERMINAL;
+        die ERROR_USER_DISABLED . "\n";
+      } elsif ($errObj->{'error_code'} == ERROR_CODE_USER_UNKNOWN) {
+        $_log->('  Dying with ERROR_USER_UNKNOWN');
+        die ERROR_USER_UNKNOWN . "\n";
+      } elsif ($errObj->{'error_code'} == ERROR_CODE_TERMINAL_UNKNOWN) {
+        die ERROR_TERMINAL_UNKNOWN . "\n";
       } else {
         if (($errObj->{'error_message'} =~ /pairing has been deactivated/i)
             || ($errObj->{'error_message'} =~ /pairing has not been authorized/i)) {
-          die ERROR_PAIRING_DEACTIVATED;
+          die ERROR_PAIRING_DEACTIVATED . "\n";
         } else {
-          die $response->status_line . ' ' . $response->content;
+          die $errObj->{'error_message'} . "\n";
         }
-      }
+      } 
     } else {
       die $response->status_line . ' ' . $response->content;
     }

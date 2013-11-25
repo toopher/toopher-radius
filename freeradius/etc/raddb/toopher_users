@@ -1,16 +1,11 @@
 # if a user is not specified in this file, default to authenticating
-# that user completely from AD (including Toopher pairing info)
-DEFAULT Auth-Type := TOOPHER_AD
+# that user through LDAP with support for Toopher Authentication
+DEFAULT Auth-Type := TOOPHER_LDAP
   Fall-Through = Yes
 
-# example for completely locally-defined user (no AD interaction, no toopher)
-usr_local Cleartext-Password := "p@ssw0rd", Auth-Type := TOOPHER_PAP
+# example for completely locally-defined user (no LDAP interaction, no toopher)
+usr_local Cleartext-Password := "p@ssw0rd", Auth-Type := PAP
 
-# example for completely locally-defined Toopher user (no AD interaction)
+# example for Toopher-authenticated user (no LDAP, yes Toopher)
 usr_local_toopher Cleartext-Password := "p@ssw0rd", Auth-Type := TOOPHER_PAP
-  Toopher-Pairing-Id = '5433f012-1442-429a-a4b7-07a38e543e3c'
 
-# example for user defined in AD, with Toopher-Pairing-Id not in AD
-usr_ad_local Auth-Type := TOOPHER_AD
-  Toopher-Pairing-Id = '5433f012-1442-429a-a4b7-07a38e543e3c'
-		
