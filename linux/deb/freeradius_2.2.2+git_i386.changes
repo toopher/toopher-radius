@@ -1,0 +1,66 @@
+Format: 1.8
+Date: Wed, 30 Oct 2013 9:30:00 -0400
+Source: freeradius
+Binary: freeradius freeradius-common freeradius-utils libfreeradius2 libfreeradius-dev freeradius-krb5 freeradius-ldap freeradius-postgresql freeradius-mysql freeradius-iodbc freeradius-dialupadmin freeradius-dbg
+Architecture: i386 all
+Version: 2.2.2+git
+Distribution: unstable
+Urgency: medium
+Maintainer: Josip Rodin <joy-packages@debian.org>
+Changed-By: Alan DeKok <aland@freeradius.org>
+Description: 
+ freeradius - a high-performance and highly configurable RADIUS server
+ freeradius-common - FreeRADIUS common files
+ freeradius-dbg - debug symbols for the FreeRADIUS packages
+ freeradius-dialupadmin - set of PHP scripts for administering a FreeRADIUS server
+ freeradius-iodbc - iODBC module for FreeRADIUS server
+ freeradius-krb5 - kerberos module for FreeRADIUS server
+ freeradius-ldap - LDAP module for FreeRADIUS server
+ freeradius-mysql - MySQL module for FreeRADIUS server
+ freeradius-postgresql - PostgreSQL module for FreeRADIUS server
+ freeradius-utils - FreeRADIUS client utilities
+ libfreeradius-dev - FreeRADIUS shared library development files
+ libfreeradius2 - FreeRADIUS shared library
+Changes: 
+ freeradius (2.2.2+git) unstable; urgency=medium
+ .
+   * New upstream version.
+Checksums-Sha1: 
+ 0fd99266d969f9ecec34fd1ae5458c48c7189dda 1610544 freeradius_2.2.2+git_i386.deb
+ 85d3b01fa4c84571f1d0a7c1836031fc8a67072b 91760 freeradius-utils_2.2.2+git_i386.deb
+ 26f721a6f3c265903696211fff546310409be7e0 116362 libfreeradius2_2.2.2+git_i386.deb
+ a998e35a023abbffe6421ad6259fb89b09cb36b3 157882 libfreeradius-dev_2.2.2+git_i386.deb
+ 7bf2d4e31ccc00c9aea5dccd4a05b1101e79ffb0 25546 freeradius-krb5_2.2.2+git_i386.deb
+ dd62710e1765d9ae23d109acfa14061397c03e0b 44354 freeradius-ldap_2.2.2+git_i386.deb
+ 8f8bbf78be486bedd351b31446501096ff8b4bb7 44398 freeradius-postgresql_2.2.2+git_i386.deb
+ dbf7f714d7dd0a6fa29877991775ad131641318b 34564 freeradius-mysql_2.2.2+git_i386.deb
+ c4d5d571b8dc9acc54983ebd3a7dfcb4ef5020c9 24698 freeradius-iodbc_2.2.2+git_i386.deb
+ 99566f33b80889e8477915b5c07226a8f0d78a09 1324588 freeradius-dbg_2.2.2+git_i386.deb
+ e2fce6faaf72b021b05e7d107a76d70ee55c3fa4 277512 freeradius-common_2.2.2+git_all.deb
+ b24b61c6e3513556231197a99e2c9e8ea861a899 123072 freeradius-dialupadmin_2.2.2+git_all.deb
+Checksums-Sha256: 
+ 6cd363aab029be8fc51ce1a53e63e7185dc52a8f96ef4b0e8735ab24fa070e55 1610544 freeradius_2.2.2+git_i386.deb
+ 3d871129e9684a36409108a76a91588a3cee540f6aecc1f39365ae24ecb2b9c9 91760 freeradius-utils_2.2.2+git_i386.deb
+ 3c74ec8684c6e6b49e4baccbb662925ee6bfa904c470fed29abfa4f3206b9bc9 116362 libfreeradius2_2.2.2+git_i386.deb
+ 773a8ff15e27e8d59f8cca4b788ee89fb04016ee4dcc05f6000ec9d19a3f7dd4 157882 libfreeradius-dev_2.2.2+git_i386.deb
+ 287d318875aa44882be841415f5002c3f0cdc292b29b3d71389682c7fe3ac295 25546 freeradius-krb5_2.2.2+git_i386.deb
+ 728b264f0ad386b4a972db3a6b25ac9d75a422a5913f8d5cb25907b031513b35 44354 freeradius-ldap_2.2.2+git_i386.deb
+ 912ea3f0ea35a7aee773df27e02f07bca458db9c0ddd70b941a6a4323f3b32e7 44398 freeradius-postgresql_2.2.2+git_i386.deb
+ 06e2beb4ab6777c5487f5d7bc80d1392337d726a94d47a366b3961a2e037aa71 34564 freeradius-mysql_2.2.2+git_i386.deb
+ d517f5718321e933d0709135950bd41c22f8c88a55a3b862d3a9cc5ec1b6b96d 24698 freeradius-iodbc_2.2.2+git_i386.deb
+ 215e25192e9a4a04c0b0bdda9793b8ea8b60882469fcbae5651962ce09a75400 1324588 freeradius-dbg_2.2.2+git_i386.deb
+ 599235a51bf262d918240e2063be8bbb55294c61e6c2ddb75dc566944d331933 277512 freeradius-common_2.2.2+git_all.deb
+ 9482f5af4910316d4613d9d6edebd21a9fdb866ba738c174139f35bd77e43e07 123072 freeradius-dialupadmin_2.2.2+git_all.deb
+Files: 
+ bfcc26396fce788b4eb31a1557acb2fc 1610544 net optional freeradius_2.2.2+git_i386.deb
+ 7c2c96d355923002ea635f6f38fddf9d 91760 net optional freeradius-utils_2.2.2+git_i386.deb
+ 1ab5c325867ace0ab64cb67c94e1ac77 116362 net optional libfreeradius2_2.2.2+git_i386.deb
+ 2091cde4b84b9ffd5d77361aef71a17b 157882 libdevel optional libfreeradius-dev_2.2.2+git_i386.deb
+ 794229a73ac9951465587ba54c1f4adf 25546 net optional freeradius-krb5_2.2.2+git_i386.deb
+ eda94acefd28eafed5b2c47d555cfe1b 44354 net optional freeradius-ldap_2.2.2+git_i386.deb
+ 48145350fb1753bcff9aed91c021cb6e 44398 net optional freeradius-postgresql_2.2.2+git_i386.deb
+ 7b3044f4875eb77989c36b838f6bfa65 34564 net optional freeradius-mysql_2.2.2+git_i386.deb
+ 90f3565de02471565dc41f82cb76b48d 24698 net optional freeradius-iodbc_2.2.2+git_i386.deb
+ 294f92f879457847f72d6285110ec167 1324588 debug extra freeradius-dbg_2.2.2+git_i386.deb
+ 6fa13a5ac32682601e4b9bca411a50f2 277512 net optional freeradius-common_2.2.2+git_all.deb
+ f7c8b24327de80fb513220f1ec73d051 123072 net optional freeradius-dialupadmin_2.2.2+git_all.deb
