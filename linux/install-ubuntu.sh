@@ -25,6 +25,29 @@ mkdir $TEMP_DIR/raddb
 mkdir $TEMP_DIR/raddb/modules
 mkdir $TEMP_DIR/raddb/sites-available
 
+echo Installing/Updating CPAN modules.  Some modules might take several attempts.
+# install needed CPAN modules.  This can still fail for unknown reasons, so
+# grep for failure messages and retry for each module
+apt-get -y install libwww-perl
+apt-get -y install libcrypt-ssleay-perl
+CPAN_MODULES=( Net::OAuth::ConsumerRequest JSON::XS JSON LWP::Protocol::https Try::Tiny URL::Encode URI::Escape )
+
+# make sure cpan is configured first
+echo exit | cpan
+for module in "${CPAN_MODULES[@]}"
+do
+  counter=0
+  mod_install_success=0
+  while [ $mod_install_success -eq 0 ]
+  do
+    let counter=counter+1
+    echo Installing $module \(attempt ${counter}\)
+    yes | cpan $module 2>&1 | grep 'fatal error'
+    mod_install_success=$?
+  done
+done
+
+
 dpkg-query -l freeradius 2>&1 | grep -q 'No packages found'
 if [ $? -ne 0 ]; then
   echo "Uninstalling existing freeradius packages"
@@ -67,28 +90,6 @@ do
 done
 
 echo \$INCLUDE dictionary.toopher >> /etc/freeradius/dictionary
-
-apt-get -y install libwww-perl
-apt-get -y install libcrypt-ssleay-perl
-echo Installing/Updating CPAN modules.  Some modules might take several attempts.
-# install needed CPAN modules.  This can still fail for unknown reasons, so
-# grep for failure messages and retry for each module
-CPAN_MODULES=( Net::OAuth::ConsumerRequest JSON::XS JSON LWP::Protocol::https Try::Tiny URL::Encode URI::Escape )
-
-# make sure cpan is configured first
-echo exit | cpan
-for module in "${CPAN_MODULES[@]}"
-do
-  counter=0
-  mod_install_success=0
-  while [ $mod_install_success -eq 0 ]
-  do
-    let counter=counter+1
-    echo Installing $module \(attempt ${counter}\)
-    yes | cpan $module 2>&1 | grep 'fatal error'
-    mod_install_success=$?
-  done
-done
 
 echo Removing $TEMP_DIR
 rm -fr $TEMP_DIR
