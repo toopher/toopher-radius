@@ -71,7 +71,7 @@ apt-get -y install libcrypt-ssleay-perl
 echo Installing/Updating CPAN modules.  Some modules might take several attempts.
 # install needed CPAN modules.  This can still fail for unknown reasons, so
 # grep for failure messages and retry for each module
-CPAN_MODULES=( Net::OAuth::ConsumerRequest JSON::XS JSON LWP::Protocol::https Try::Tiny URI::Escape )
+CPAN_MODULES=( Net::OAuth::ConsumerRequest JSON::XS JSON LWP::Protocol::https Try::Tiny URL::Encode URI::Escape )
 
 # make sure cpan is configured first
 echo exit | cpan
