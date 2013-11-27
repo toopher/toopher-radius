@@ -1,3 +1,10 @@
+##!DEFAULT LDAP_HOST 127.0.0.1
+##!DEFAULT LDAP_PORT 389
+##!DEFAULT LDAP_IDENTITY cn=radius-admin,cn=users,dc=example,dc=com
+##!DEFAULT LDAP_PASSWORD p@ssw0rd
+##!DEFAULT LDAP_BASEDN cn=users,dc=example,dc=com
+##!DEFAULT LDAP_SEARCH_FILTER (|(uid=%{%{Stripped-User-Name}:-%{User-Name}})(sAMAccountName=%{%{Stripped-User-Name}:-%{User-Name}}))
+##!DEFAULT LDAP_GROUP_MEMBERSHIP_FILTER (|(&(objectClass=GroupOfNames)(member=%{control:Ldap-UserDn}))(&(objectClass=GroupOfUniqueNames)(uniquemember=%{control:Ldap-UserDn}))(&(objectClass=group)(member=%{control:Ldap-UserDn})))
 # -*- text -*-
 #
 #  $Id: d13892634e4a8458c942ce170f59f98521dce500 $
@@ -30,11 +37,11 @@ ldap {
 	#
 	#  Note that this needs to match the name in the LDAP
 	#  server certificate, if you're using ldaps.
-	server = "192.168.1.201"
-	identity = "cn=radius_admin,cn=users,dc=example,dc=toopher,dc=com"
-	password = p@ssw0rd
-	basedn = "cn=users,dc=example,dc=toopher,dc=com"
-	filter = "(|(uid=%{%{Stripped-User-Name}:-%{User-Name}})(sAMAccountName=%{%{Stripped-User-Name}:-%{User-Name}}))"
+	server = "{{LDAP_HOST}}"
+	identity = "{{LDAP_IDENTITY}}"
+	password = {{LDAP_PASSWORD}}
+	basedn = "{{LDAP_BASEDN}}"
+	filter = "{{LDAP_SEARCH_FILTER}}"
 	# filter = "(|(uid=%{%{Stripped-User-Name}:-%{User-Name}})"
 	#base_filter = "(objectclass=radiusprofile)"
 
@@ -52,7 +59,7 @@ ldap {
 	#  Port to connect on, defaults to 389. Setting this to
 	#  636 will enable LDAPS if start_tls (see below) is not
 	#  able to be used.
-	#port = 389
+	port = {{LDAP_PORT}}
 
 	# seconds to wait for LDAP query to finish. default: 20
 	timeout = 4
@@ -138,9 +145,7 @@ ldap {
 	#  Group membership checking.  Disabled by default.
 	#
 	groupname_attribute = cn
-	#groupmembership_filter = "(|(&(objectClass=GroupOfNames)(member=%{control:Ldap-UserDn}))(&(objectClass=GroupOfUniqueNames)(uniquemember=%{control:Ldap-UserDn})))"
-	groupmembership_filter = "(|(&(objectClass=GroupOfNames)(member=%{control:Ldap-UserDn}))(&(objectClass=GroupOfUniqueNames)(uniquemember=%{control:Ldap-UserDn}))(&(objectClass=group)(member=%{control:Ldap-UserDn})))"
-	#groupmembership_filter = "(&(objectClass=group)(member=%{control:Ldap-UserDn}))"
+	groupmembership_filter = "{{LDAP_GROUP_MEMBERSHIP_FILTER}}"
 	# groupmembership_attribute = radiusGroupName
 
 	# compare_check_items = yes
