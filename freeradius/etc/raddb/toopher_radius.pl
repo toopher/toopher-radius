@@ -15,23 +15,18 @@
 #
 #  Copyright 2002  The FreeRADIUS server project
 #  Copyright 2002  Boian Jordanov <bjordanov@orbitel.bg>
+#  Copyright 2013  Toopher, Inc (https://www.toopher.com)
 #
 
-#
-# Example code for use with rlm_perl
-#
-# You can use every module that comes with your perl distribution!
-#
 
 use strict;
-#use diagnostics;
 use FindBin;
 use lib "$FindBin::Bin/";
 use Carp ;
 use Try::Tiny;
 $Carp::Verbose = 1;
 
-my $testmode = $ARGV[0];
+my $standalone = $ARGV[0];
 
 # use ...
 # This is very important ! Without this script will not get the filled hashes from main.
@@ -62,7 +57,7 @@ my $config = toopher_radius_config::get_config;
 
 sub _log {
   my ($msg) = @_;
-  if($testmode){
+  if($standalone){
     print($msg . "\n");
   } else { 
     &radiusd::radlog(0, $msg);
@@ -109,12 +104,6 @@ sub poll_for_auth {
     $RAD_REPLY{'Reply-Message'} = 'Failed toopher authentication: ' . $auth->reason;
     return RLM_MODULE_REJECT;
   } 
-}
-
-sub check_with_toopher {
-  my ($toopherPairingId, $toopherTerminalName) = @_;
-  
-  return &poll_for_auth($api->authenticate($toopherPairingId, $toopherTerminalName));
 }
 
 sub pair_with_toopher {
@@ -352,9 +341,6 @@ if($ARGV[0] eq 'unittest'){
   $api = ToopherAPI->new(key => 'key', secret => 'secret'); 
   $api->{'_ua'} = $ua;
   unittest_toopher_rlm_perl($ua);
-} elsif($ARGV[0] eq 'test'){
-  instantiate_toopher_api();
-  test_ad_toopher_rlm_perl();
 } elsif($ARGV[0] eq 'reset-pairing') {
   my $user_name = $ARGV[1];
   die ("Usage: $0 reset-pairing [username]\n") unless $user_name;
