@@ -30,6 +30,8 @@ if [ $? -ne 0 ]; then
   echo "Uninstalling existing freeradius packages"
   apt-get -y remove freeradius
   apt-get -y remove libfreeradius2
+  apt-get -y remove freeradius-common
+  apt-get -y autoremove
 fi
 
 if [ -e /etc/freeradius/toopher_radius_config.pm ]; then
@@ -47,7 +49,7 @@ fi
 
 echo 
 echo installing freeradius...
-dpkg -i deb/freeradius-common*.deb deb/*freeradius*${DPKG_ARCH}.deb
+dpkg -i deb/*freeradius*_all.deb deb/*freeradius*${DPKG_ARCH}.deb
 echo installing unmet dependencies
 apt-get -f -y install
 
