@@ -2,7 +2,7 @@
 
 use Data::Dumper;
 use Try::Tiny;
-my @TEMPLATED_FILES = ("modules/files", "modules/ldap", "modules/perl", "sites-available/default", "toopher_radius_config.pm", "toopher_radius.pl", "toopher_users");
+my @TEMPLATED_FILES = ("modules/files", "modules/ldap", "modules/perl", "sites-available/default", "toopher_radius_config.pm", "toopher_radius.pl", "toopher_users", "dictionary.toopher", "ToopherAPI.pm");
 my $outputDir;
 my $inputDir;
 my $raddb;
