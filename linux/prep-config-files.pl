@@ -202,9 +202,14 @@ my $versionParsers = {
 if ($raddb) {
   my $installedVersion = getInstalledVersion();
 
-  print "Installed version is " . $installedVersion . "\n";
   print "reading existing configuration...";
-  $versionParsers->{$installedVersion}();
+  if(exist $versionParsers->{$installedVersion}) {
+    print "Installed version is " . $installedVersion . "\n";
+    $versionParsers->{$installedVersion}();
+  } else {
+    print "Unable to determine installed version.  Assuming version 0\n";
+    $versionParsers->{'0'}();
+  }
   print " done.\n";
   print "Detected configuration : \n";
   foreach my $key (sort keys %{$toopherConfiguration}){
