@@ -89,6 +89,12 @@ do
   chmod 644 /etc/freeradius/$f
 done
 
+echo Disabling EAP in radiusd.conf
+sed -i '/^\s*\$INCLUDE eap.conf/s/^/#/' /etc/freeradius/radiusd.conf
+
+echo Removing inner-tunnel config
+unlink /etc/freeradius/sites-enabled/inner-tunnel
+
 echo \$INCLUDE dictionary.toopher >> /etc/freeradius/dictionary
 
 echo Removing $TEMP_DIR
