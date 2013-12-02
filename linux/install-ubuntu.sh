@@ -89,6 +89,8 @@ do
   chmod 644 /etc/freeradius/$f
 done
 
+chmod 744 /etc/freeradius/toopher_radius.pl
+
 echo Disabling EAP in radiusd.conf
 sed -i '/^\s*\$INCLUDE eap.conf/s/^/#/' /etc/freeradius/radiusd.conf
 
