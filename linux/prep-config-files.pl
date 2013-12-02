@@ -203,7 +203,7 @@ if ($raddb) {
   my $installedVersion = getInstalledVersion();
 
   print "reading existing configuration...";
-  if(exist $versionParsers->{$installedVersion}) {
+  if(exists $versionParsers->{$installedVersion}) {
     print "Installed version is " . $installedVersion . "\n";
     $versionParsers->{$installedVersion}();
   } else {
