@@ -40,7 +40,7 @@ unless (defined($password)) {
 
 my $r = new Authen::Radius(Host => '127.0.0.1', Secret => 'testing123', Timeout=>60);
 Authen::Radius->load_dictionary();
-Authen::Radius->load_dictionary('/home/drew/dictionary');
+Authen::Radius->load_dictionary('/etc/freeradius/dictionary');
 
 $r->add_attributes (
                 { Name => 'User-Name', Value => $username },
