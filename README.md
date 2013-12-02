@@ -104,5 +104,5 @@ Users can reset their pairing from their mobile device through the Toopher Mobil
 In some cases, a user may require administrator assistance to recover a lost pairing.  This most commonly happens if the user uninstalls the Toopher app, or loses their mobile device.  There are two options for restoring access to the user:
 
 * Remove the user from the `ToopherUsers` LDAP group - This will preserve the Pairing informaion in the Toopher API server, while allowing the user to bypass Toopher authentication to log in.  This method can be effectively undone by adding the user back to the `ToopherUsers` group.
-* Reset the user's pairing - Administrators can reset a user's pairing information by running `sudo /etc/freeradius/toopher_radius.pl reset-pairing [username]` on the Toopher-RADIUS server.  This command will remove that user's pairing information from the Toopher API, and they will be prompted to re-pair the next time they authenticate.
+* Reset the user's pairing - Administrators can reset a user's pairing information by running `perl /etc/freeradius/toopher_radius.pl reset-pairing [username]` on the Toopher-RADIUS server.  This command will remove that user's pairing information from the Toopher API, and they will be prompted to re-pair the next time they authenticate.
 
