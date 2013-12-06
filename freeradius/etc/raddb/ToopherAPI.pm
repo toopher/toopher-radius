@@ -286,7 +286,6 @@ sub _parse_request_error
       if($errObj->{'error_code'} == ERROR_CODE_USER_DISABLED) {
         die ERROR_USER_DISABLED . "\n";
       } elsif ($errObj->{'error_code'} == ERROR_CODE_USER_UNKNOWN) {
-        $_log->('  Dying with ERROR_USER_UNKNOWN');
         die ERROR_USER_UNKNOWN . "\n";
       } elsif ($errObj->{'error_code'} == ERROR_CODE_TERMINAL_UNKNOWN) {
         die ERROR_TERMINAL_UNKNOWN . "\n";
