@@ -159,7 +159,7 @@ sub getInstalledVersion
   my $result = 0;
   eval {
     if (toopher_radius_config::VERSION) {
-      $result = toopher_radius_config::VERSION;
+      $result = int(toopher_radius_config::VERSION);
     };
   };
   if ($@) {
