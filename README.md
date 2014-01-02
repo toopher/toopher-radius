@@ -29,6 +29,13 @@ run the provided install-ubuntu.sh script as root:
 
     cd linux && sudo ./install-ubuntu.sh
 
+If the installation script stalls on a CPAN step, you may need to update the CPAN mirror list in the cpan shell:
+
+    sudo cpan
+    cpan> o conf init urllist
+    cpan> o conf commit
+    cpan> exit
+
 ### Installing on other linux
 Automated install scripts for Redhat and SuSE distros should be available soon.  Please contact support@toopher.com if you need accelerated access to installers for alternate distributions.
 
