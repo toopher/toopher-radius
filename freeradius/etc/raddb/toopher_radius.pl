@@ -52,16 +52,21 @@ use constant    RLM_MODULE_NOOP=>      7;#  /* module succeeded without doing an
 use constant    RLM_MODULE_UPDATED=>   8;#  /* OK (pairs modified) */
 use constant    RLM_MODULE_NUMCODES=>  9;#  /* How many return codes there are */
 
+use constant    LOG_DBG => 1;
+use constant    LOG_INFO=> 3;
+use constant    LOG_ERR => 4;
+
 our $api;
 
 my $config = toopher_radius_config::get_config;
 
 sub _log {
-  my ($msg) = @_;
+  my ($level, $msg) = @_;
+  ($level, $msg) = (LOG_DBG, $level) unless $msg;
   if($standalone){
     print($msg . "\n");
   } else { 
-    &radiusd::radlog(0, $msg);
+    &radiusd::radlog($level, $msg);
   }
 }
 
