@@ -1,5 +1,5 @@
 PERL_VERSION=5.12.3
-FREERAD_VERSION=2.2.0
+FREERAD_TAG=toopher-RADIUS/1.0
 
 FREERAD_BUILD=/toopher-freeradius
 
@@ -80,11 +80,15 @@ rm perl.exe
 ./staticperl mkbundle ${STATICPERL_OPTS} || (echo 'Failed to build staticperl bundle' && exit 1)
 
 echo Downloading Freeradius Source
-FREERAD=freeradius-server-${FREERAD_VERSION}
-wget ftp://ftp.freeradius.org/pub/freeradius/${FREERAD}.tar.gz
+FREERAD=freeradius-server
+git clone git@bitbucket.org:toopher/freeradius-server.git
+pushd freeradius-server
+git checkout ${FREERAD_TAG}
+popd
+#wget ftp://ftp.freeradius.org/pub/freeradius/${FREERAD}.tar.gz
 
-tar xzvf freeradius-server-${FREERAD_VERSION}.tar.gz
-rm freeradius-server-${FREERAD_VERSION}.tar.gz
+#tar xzvf freeradius-server-${FREERAD_VERSION}.tar.gz
+#rm freeradius-server-${FREERAD_VERSION}.tar.gz
 
 FREERAD_PERL=${FREERAD}/src/modules/rlm_perl
 # add static perl bundle to freeradius rlm_perl source dir
