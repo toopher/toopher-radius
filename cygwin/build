@@ -36,7 +36,8 @@ echo Installing/Updating CPAN modules.  Some modules might take several attempts
 # grep for failure messages and retry for each module
 CPAN_MODULES=( Digest::MD5 YAML LWP::UserAgent Encode Data::Dumper Digest::SHA 
   Digest::SHA1 Digest::HMAC_SHA1 Net::OAuth::ConsumerRequest Crypt::SSLeay
-  Net::SSLeay JSON::XS JSON Net::LDAP HTTP::Request::Common )
+  Net::SSLeay JSON::XS JSON Net::LDAP HTTP::Request::Common Try::Tiny 
+  URL::Encode Term::ReadPassword Data::HexDump Authen::Radius)
 
 for module in "${CPAN_MODULES[@]}"
 do
@@ -61,7 +62,8 @@ STATICPERL_OPTS="--noclean -vvv --strip none -MConfig_heavy.pl -MConfig -MJSON::
   -MURI::_server -MURI::file -MURI::http -MURI::https \
   -MMIME::Base64 \
   -Mutf8_heavy.pl -Municore/heavy.pl -MScalar::Util -MList::Util -MNet::SSLeay \
-  -MLWP::Protocol::https "
+  -MLWP::Protocol::https -MTry::Tiny -MURL::Encode \
+  -MTerm::ReadPassword -MData::HexDump -MTime::HiRes -MAuthen::Radius "
 
 echo STATICPERL_OPTS is ${STATICPERL_OPTS}
 # make a perl executable and libperl that can be statically linked into rlm_perl
@@ -74,21 +76,18 @@ cp -fr ./perl.exe ${PERL}
 #clean up 
 rm *.o
 rm *.a
-rm perl.exe
 
 # now make a perl bundle that can be statically linked into rlm_perl
 ./staticperl mkbundle ${STATICPERL_OPTS} || (echo 'Failed to build staticperl bundle' && exit 1)
 
 echo Downloading Freeradius Source
 FREERAD=freeradius-server
-git clone git@bitbucket.org:toopher/freeradius-server.git
-pushd freeradius-server
-git checkout ${FREERAD_TAG}
+git archive --format=tar --remote=git@bitbucket.org:toopher/freeradius-server.git ${FREERAD_TAG} > freeradius-server.tar
+mkdir ${FREERAD}
+pushd ${FREERAD}
+tar xvf ../freeradius-server.tar
 popd
-#wget ftp://ftp.freeradius.org/pub/freeradius/${FREERAD}.tar.gz
-
-#tar xzvf freeradius-server-${FREERAD_VERSION}.tar.gz
-#rm freeradius-server-${FREERAD_VERSION}.tar.gz
+rm freeradius-server.tar
 
 FREERAD_PERL=${FREERAD}/src/modules/rlm_perl
 # add static perl bundle to freeradius rlm_perl source dir
@@ -119,7 +118,7 @@ pushd ${FREERAD}
 ./configure --disable-shared --enable-static --prefix=${FREERAD_BUILD} \
   --with-rlm_krb5=no --with-rlm_pam=no --with-rlm_eap_ikev2=no --with-rlm_sql_oracle=no \
   --with-rlm_chap=no --with-rlm_mschap=no --with-rlm_python=no --with-dhcp=no \
-  --with-rlm_wimax=no --with-rlm_ippool=no --with-rlm_otp=no --with-rlm_ldap=no \
+  --with-rlm_wimax=no --with-rlm_ippool=no --with-rlm_otp=no --with-rlm_ldap=yes \
   --with-rlm_otp=no --with-rlm_sql=no --with-rlm_sql_iodbc=no --with-rlm_sql_mysql=no \
   --with-rlm_sql_postgresql=no --with-rlm_sqlcounter=no --with-rlm_unix=no \
   --with-rlm_sql_unixodbc=no --with-openssl=yes --with-rlm_dbm=no --with-rlm_eap_ttls=yes \
@@ -139,28 +138,40 @@ popd
 
 echo Moving over some libs that don\'t seem to play well w/ staticperl
 cp -r .staticperl/perl/lib/Mozilla ${FREERAD_BUILD}/etc/raddb/
+cp perl.exe ${FREERAD_BUILD}/bin/
+rm perl.exe
 
-echo Replace default freeradius config with toopher-specific stuff
-cp -fr ../freeradius/* ${FREERAD_BUILD}/
+echo Copy configuration templates to /toopher
+mkdir ${FREERAD_BUILD}/toopher
+cp -fr ../freeradius/* ${FREERAD_BUILD}/toopher
+
+echo 
 
 echo get rid of the inner-tunnel and control-socket sites
 unlink ${FREERAD_BUILD}/etc/raddb/sites-enabled/inner-tunnel
 unlink ${FREERAD_BUILD}/etc/raddb/sites-enabled/control-socket
 
+echo moving root dictionary to /etc/raddb/dictionary
+cp ${FREERAD}/share/dictionary ${FREERAD_BUILD}/etc/raddb/dictionary
 
-echo moving the dictionary files directly to /etc/raddb
-cp -r ${FREERAD}/share/dictionary* ${FREERAD_BUILD}/etc/raddb/
+echo moving the RFC/vendor dictionary files directly to /etc/raddb/dictionaries
+mkdir ${FREERAD_BUILD}/etc/raddb/dictionaries
+cp -r ${FREERAD}/share/dictionary.* ${FREERAD_BUILD}/etc/raddb/dictionaries
+
+echo point dictionary includes to /etc/raddb/dictionaries subdirectory
+sed -i "s/INCLUDE dictionary/INCLUDE dictionaries\dictionary/g" ${FREERAD_BUILD}/etc/raddb/dictionary
 
 # add in the toopher dictionary
 echo \$INCLUDE dictionary.toopher >> ${FREERAD_BUILD}/etc/raddb/dictionary
 
 # create a shortcut batch file to run the radius server
-echo set PERL_LWP_SSL_CA_FILE=%~dp0\\etc\\raddb\\Mozilla\\CA\\cacert.pem > ${FREERAD_BUILD}/run_toopher_radius.cmd
-echo cd sbin >> ${FREERAD_BUILD}/run_toopher_radius.cmd
-echo radiusd.exe -f -d ../etc/raddb -l ../var/log/radius/radius.log >> ${FREERAD_BUILD}/run_toopher_radius.cmd
+cp -r installed_scripts/* ${FREERAD_BUILD}
 
 echo Copying cygwin dlls necessary to run in normal windows environment
-CYGWIN_DLLS=( cygwin1.dll cyggdbm-4.dll )
+CYGWIN_DLLS=( cygwin1.dll cyggdbm-4.dll cyglber-2-4-2.dll cygldap-2-4-2.dll 
+  cygldap_r-2-4-2.dll cygcrypto-1.0.0.dll cygz.dll 
+  cyggcc_s-1.dll cygsasl2-2.dll cygssl-1.0.0.dll
+  cygcrypt-0.dll)
 for cyg_dll in "${CYGWIN_DLLS[@]}"
 do
   cp /bin/${cyg_dll} ${FREERAD_BUILD}/sbin/${cyg_dll}
