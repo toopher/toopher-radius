@@ -1,0 +1,1 @@
+heat dir toopher-freeradius -nologo -dr INSTALLDIR -cg ServerFiles -gg -srd -sfrag -indent 2 -var wix.ServerFiles -out serverfiles.wxs

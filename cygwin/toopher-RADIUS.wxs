@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="80293949-342A-44F1-B829-B2BA01D0645A" 
+      Name="Toopher FreeRADIUS Server" 
+      Language="1033" Version="1.1" 
+      Manufacturer="Toopher, Inc" 
+      UpgradeCode="2651E174-96CB-4B5F-AAE7-A53B2D79F041">
+    <Package Description="Test file in a Product" Comments="Simple test" InstallerVersion="200" Compressed="yes" />
+    <Media Id="1" Cabinet="simple.cab" EmbedCab="yes" />
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder" Name="PFiles">
+        <Directory Id="Toopher" Name="Toopher">
+          <Directory Id="INSTALLDIR" Name="Toopher FreeRADIUS Server" />
+        </Directory>
+      </Directory>
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ProgramMenuToopher" Name="Toopher">
+          <Directory Id="ProgramMenuToopherRADIUS" Name="Toopher-RADIUS Server">
+            <Component Id="ProgramMenuShortcuts" Guid="A6913810-7522-127C-9B8C-1E55CCF37B0F">
+              <Shortcut Id="RestartServiceShortcut"
+                  Name="Restart Service"
+                  Target="[INSTALLDIR]restart_service.cmd"
+                  WorkingDirectory="INSTALLDIR" />
+              <RegistryValue Root="HKCU" Key="Software\Toopher\Toopher FreeRADIUS Server"
+                  Name="installed" Type="integer" Value="1" KeyPath="yes" />
+              <RemoveFolder Id="RemoveProgramMenuToopherRADIUS"
+                  Directory="ProgramMenuToopherRADIUS"
+                  On="uninstall" />              
+              <RemoveFolder Id="RemoveProgramMenuToopher"
+                  Directory="ProgramMenuToopher"
+                  On="uninstall" />
+            </Component>
+          </Directory>
+        </Directory>
+      </Directory>
+    </Directory>
+              
+    <Feature Id="ServerFiles" Level="1">
+      <ComponentGroupRef Id="ServerFiles" Primary="yes" />
+      <ComponentRef Id="ProgramMenuShortcuts" />
+    </Feature>
+  </Product>
+</Wix>
