@@ -1,0 +1,5 @@
+.staticperl
+*.wixobj
+*.wixpdb
+*.msi
+*.tgz
