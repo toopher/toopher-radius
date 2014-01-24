@@ -6,15 +6,18 @@ my @TEMPLATED_FILES = ("modules/files", "modules/ldap", "modules/perl", "sites-a
 my $outputDir;
 my $inputDir;
 my $raddb;
+my $prompt;
 
 BEGIN {
   $outputDir = $ARGV[0];
   $inputDir = $ARGV[1];
   $raddb = $ARGV[2];
+  $prompt = $ARGV[3];
 
-  if ($raddb) {
-    print 'raddb is ' . $raddb;
+  if ($raddb and ($raddb ne '-') and (-e "$raddb/toopher_radius_config.pm")) {
     require "$raddb/toopher_radius_config.pm";
+  } else {
+    $raddb = 0;
   }
 }
 
@@ -142,6 +145,7 @@ sub fromVersion1
   $toopherConfiguration->{'TERMINAL_IDENTIFIER'} = $terminalIdentifier;
 
   my $ldapConf = parse_module_conf($raddb . '/modules/ldap')->{'ldap'};
+  print 'ldapconf is ' . Dumper($ldapConf);
 
   update($toopherConfiguration, 'LDAP_HOST', $ldapConf, 'server');
   update($toopherConfiguration, 'LDAP_PORT', $ldapConf, 'port');
@@ -166,6 +170,20 @@ sub getInstalledVersion
     die "error: $@\n";
   }
   return '' . $result;
+}
+
+sub load_template_defaults
+{
+  my ($inputFile) = @_;
+  open (my $ih, "<", $inputFile) or die "Couldn't open $inputFile for reading: $@\n";
+  while(my $line = <$ih>){
+    if ($line =~ /^##!DEFAULT (\S+)\s+(.*?)\s*$/) {
+      if (! (exists $toopherConfiguration->{$1})) {
+        $toopherConfiguration->{$1} = $2;
+      }
+    }
+  }
+  close $ih;
 }
 
 sub expand_templates
@@ -199,7 +217,14 @@ my $versionParsers = {
   '1' => \&fromVersion1,
 };
 
+print "Loading Template File Default Values...\n";
+foreach my $file (@TEMPLATED_FILES) {
+  print "  $file\n";
+  load_template_defaults("$inputDir/$file");
+}
+
 if ($raddb) {
+  print "Preserving Existing Configuration...\n";
   my $installedVersion = getInstalledVersion();
 
   print "reading existing configuration...";
@@ -214,6 +239,26 @@ if ($raddb) {
   print "Detected configuration : \n";
   foreach my $key (sort keys %{$toopherConfiguration}){
     print "  $key = " . $toopherConfiguration->{$key} . "\n";
+  }
+}
+
+if ($prompt) {
+  my %noprompt = (
+    EXISTING_USERS_FILE_ENTRIES => 1,
+    
+  );
+  print "Please supply a value for each configuration variable.  [Enter] keeps default.\n";
+  foreach my $key (sort keys %{$toopherConfiguration}) {
+    if (exists $noprompt{$key}) {
+      next;
+    } else {
+    print '  ' . $key . ' [' . $toopherConfiguration->{$key} . '] : ';
+    my $response = <STDIN>;
+    chomp ($response);
+    if ($response) {
+      $toopherConfiguration->{$key} = $response;
+    }
+    }
   }
 }
 

@@ -1,0 +1,1 @@
+nssm remove toopher-freeradius confirm

@@ -1,7 +1,9 @@
 PERL_VERSION=5.12.3
 FREERAD_TAG=toopher-RADIUS/1.0
 
-FREERAD_BUILD=/toopher-freeradius
+FREERAD_BUILD=${PWD}/toopher-RADIUS-build
+mkdir -p ${FREERAD_BUILD}
+rm -fr ${FREERAD_BUILD}/*
 
 if `command -v perl >/dev/null 2>&1`
 then
@@ -138,12 +140,13 @@ popd
 
 echo Moving over some libs that don\'t seem to play well w/ staticperl
 cp -r .staticperl/perl/lib/Mozilla ${FREERAD_BUILD}/etc/raddb/
-cp perl.exe ${FREERAD_BUILD}/bin/
+cp perl.exe ${FREERAD_BUILD}/sbin/
 rm perl.exe
 
 echo Copy configuration templates to /toopher
 mkdir ${FREERAD_BUILD}/toopher
 cp -fr ../freeradius/* ${FREERAD_BUILD}/toopher
+cp ../linux/prep-config-files.pl ${FREERAD_BUILD}
 
 echo 
 
@@ -157,9 +160,10 @@ cp ${FREERAD}/share/dictionary ${FREERAD_BUILD}/etc/raddb/dictionary
 echo moving the RFC/vendor dictionary files directly to /etc/raddb/dictionaries
 mkdir ${FREERAD_BUILD}/etc/raddb/dictionaries
 cp -r ${FREERAD}/share/dictionary.* ${FREERAD_BUILD}/etc/raddb/dictionaries
+rm ${FREERAD_BUILD}/etc/raddb/dictionary.*
 
 echo point dictionary includes to /etc/raddb/dictionaries subdirectory
-sed -i "s/INCLUDE dictionary/INCLUDE dictionaries\dictionary/g" ${FREERAD_BUILD}/etc/raddb/dictionary
+sed -i 's/INCLUDE dictionary/INCLUDE dictionaries\\dictionary/g' ${FREERAD_BUILD}/etc/raddb/dictionary
 
 # add in the toopher dictionary
 echo \$INCLUDE dictionary.toopher >> ${FREERAD_BUILD}/etc/raddb/dictionary
@@ -171,7 +175,7 @@ echo Copying cygwin dlls necessary to run in normal windows environment
 CYGWIN_DLLS=( cygwin1.dll cyggdbm-4.dll cyglber-2-4-2.dll cygldap-2-4-2.dll 
   cygldap_r-2-4-2.dll cygcrypto-1.0.0.dll cygz.dll 
   cyggcc_s-1.dll cygsasl2-2.dll cygssl-1.0.0.dll
-  cygcrypt-0.dll)
+  cygcrypt-0.dll )
 for cyg_dll in "${CYGWIN_DLLS[@]}"
 do
   cp /bin/${cyg_dll} ${FREERAD_BUILD}/sbin/${cyg_dll}
@@ -186,4 +190,4 @@ fi
 
 
 echo creating toopher_cygwin_freeradius.tgz
-tar czvf toopher_cygwin_freeradius.tgz /toopher-freeradius
+tar czvf toopher_cygwin_freeradius.tgz ${FREERAD_BUILD}
