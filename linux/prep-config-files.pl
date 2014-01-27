@@ -2,7 +2,10 @@
 
 use Data::Dumper;
 use Try::Tiny;
+use File::Copy "cp";
+
 my @TEMPLATED_FILES = ("modules/files", "modules/ldap", "modules/perl", "sites-available/default", "toopher_radius_config.pm", "toopher_radius.pl", "toopher_users", "dictionary.toopher", "ToopherAPI.pm");
+my @COPY_IF_MISSING = ("clients.conf");
 my $outputDir;
 my $inputDir;
 my $raddb;
@@ -144,16 +147,17 @@ sub fromVersion1
   chomp $terminalIdentifier;
   $toopherConfiguration->{'TERMINAL_IDENTIFIER'} = $terminalIdentifier;
 
-  my $ldapConf = parse_module_conf($raddb . '/modules/ldap')->{'ldap'};
-  print 'ldapconf is ' . Dumper($ldapConf);
-
-  update($toopherConfiguration, 'LDAP_HOST', $ldapConf, 'server');
-  update($toopherConfiguration, 'LDAP_PORT', $ldapConf, 'port');
-  update($toopherConfiguration, 'LDAP_IDENTITY', $ldapConf, 'identity');
-  update($toopherConfiguration, 'LDAP_PASSWORD', $ldapConf, 'password');
-  update($toopherConfiguration, 'LDAP_BASEDN', $ldapConf, 'basedn');
-  update($toopherConfiguration, 'LDAP_SEARCH_FILTER', $ldapConf, 'filter');
-  update($toopherConfiguration, 'LDAP_GROUP_MEMBERSHIP_FILTER', $ldapConf, 'groupmembership_filter');
+  if ( -e $raddb . '/modules/ldap') {
+      my $ldapConf = parse_module_conf($raddb . '/modules/ldap')->{'ldap'};
+      
+      update($toopherConfiguration, 'LDAP_HOST', $ldapConf, 'server');
+      update($toopherConfiguration, 'LDAP_PORT', $ldapConf, 'port');
+      update($toopherConfiguration, 'LDAP_IDENTITY', $ldapConf, 'identity');
+      update($toopherConfiguration, 'LDAP_PASSWORD', $ldapConf, 'password');
+      update($toopherConfiguration, 'LDAP_BASEDN', $ldapConf, 'basedn');
+      update($toopherConfiguration, 'LDAP_SEARCH_FILTER', $ldapConf, 'filter');
+      update($toopherConfiguration, 'LDAP_GROUP_MEMBERSHIP_FILTER', $ldapConf, 'groupmembership_filter');
+  }
 
   $toopherConfiguration->{'EXISTING_USERS_FILE_ENTRIES'} = extract_users_file_entries("$raddb/toopher_users");
 }
@@ -267,5 +271,13 @@ foreach my $file (@TEMPLATED_FILES) {
   print "  $file\n";
   expand_templates("$inputDir/$file", "$outputDir/$file");
 }
+
+foreach my $file (@COPY_IF_MISSING) {
+  if (!-e "$outputDir/$file") {
+    print "  installing default version of $file\n";
+    cp("$inputDir/$file", "$outputDir/$file");
+  }
+}
+  
 
 print "Done.  Toopher-RADIUS config files have been created in $outputDir\n"; 
