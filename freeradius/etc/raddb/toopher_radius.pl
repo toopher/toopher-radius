@@ -349,6 +349,14 @@ if($ARGV[0] eq 'unittest'){
   unittest_toopher_rlm_perl($ua);
 } elsif($ARGV[0] eq 'reset-pairing') {
   my $user_name = $ARGV[1];
+  if (not $user_name) {
+    print "*****************************\n";
+    print "**  Toopher Pairing Reset  **\n";
+    print "*****************************\n";
+    print "\nUsername to Reset > ";
+    $user_name = <STDIN>;
+    chomp($user_name);
+  }
   die ("Usage: $0 reset-pairing [username]\n") unless $user_name;
   try {
     instantiate_toopher_api();
