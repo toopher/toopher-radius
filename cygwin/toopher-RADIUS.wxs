@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <Product Id="80293949-342A-44F1-B829-B2BA01D0645A" 
+  <Product Id="07EAC440-82A8-127C-927C-1EF842220B03" 
       Name="Toopher FreeRADIUS Server" 
       Language="1033" Version="1.2" 
       Manufacturer="Toopher, Inc" 
       UpgradeCode="2651E174-96CB-4B5F-AAE7-A53B2D79F041">
     <Package Description="Test file in a Product" Comments="Simple test" InstallerVersion="200" Compressed="yes" />
+    <MajorUpgrade 
+      DowngradeErrorMessage="A later version of [ProductName] is already installed. Setup will now exit." />
     <Media Id="1" Cabinet="simple.cab" EmbedCab="yes" />
     <Icon Id="toopher16x16.ico" SourceFile="assets\toopher-16x16.ico" />
     <Icon Id="toopher32x32.ico" SourceFile="assets\toopher-32x32.ico" />
