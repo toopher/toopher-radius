@@ -7,6 +7,12 @@
       UpgradeCode="2651E174-96CB-4B5F-AAE7-A53B2D79F041">
     <Package Description="Test file in a Product" Comments="Simple test" InstallerVersion="200" Compressed="yes" />
     <Media Id="1" Cabinet="simple.cab" EmbedCab="yes" />
+    <Icon Id="toopher16x16.ico" SourceFile="assets\toopher-16x16.ico" />
+    <Icon Id="toopher32x32.ico" SourceFile="assets\toopher-32x32.ico" />
+    <Icon Id="toopher48x48.ico" SourceFile="assets\toopher-48x48.ico" />
+    <Icon Id="toopher256x256.ico" SourceFile="assets\toopher-256x256.ico" />
+    <!-- set the icon that shows up in add/remove programs -->
+    <Property Id="ARPPRODUCTICON" Value="toopher32x32.ico" />
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramFilesFolder" Name="PFiles">
         <Directory Id="Toopher" Name="Toopher">
@@ -53,7 +59,7 @@
                   WorkingDirectory="INSTALLDIR" />
               <Shortcut Id="RunDebugServer"
                   Name="Run Toopher-FreeRADIUS Server in Debug Mode"
-                  Target="[INSTALLDIR]run_toopher_radius.cmd"
+                  Target="[INSTALLDIR]debug_toopher_radius.cmd"
                   WorkingDirectory="INSTALLDIR" />
               <Shortcut Id="InstallServiceShortcut"
                   Name="Install toopher-freeradius Service"

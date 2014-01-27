@@ -39,7 +39,7 @@ echo Installing/Updating CPAN modules.  Some modules might take several attempts
 CPAN_MODULES=( Digest::MD5 YAML LWP::UserAgent Encode Data::Dumper Digest::SHA 
   Digest::SHA1 Digest::HMAC_SHA1 Net::OAuth::ConsumerRequest Crypt::SSLeay
   Net::SSLeay JSON::XS JSON Net::LDAP HTTP::Request::Common Try::Tiny 
-  URL::Encode Term::ReadPassword Data::HexDump Authen::Radius)
+  URL::Encode Term::ReadPassword Data::HexDump Authen::Radius File::Copy)
 
 for module in "${CPAN_MODULES[@]}"
 do
@@ -65,7 +65,8 @@ STATICPERL_OPTS="--noclean -vvv --strip none -MConfig_heavy.pl -MConfig -MJSON::
   -MMIME::Base64 \
   -Mutf8_heavy.pl -Municore/heavy.pl -MScalar::Util -MList::Util -MNet::SSLeay \
   -MLWP::Protocol::https -MTry::Tiny -MURL::Encode \
-  -MTerm::ReadPassword -MData::HexDump -MTime::HiRes -MAuthen::Radius "
+  -MTerm::ReadPassword -MData::HexDump -MTime::HiRes -MAuthen::Radius \
+  -MFile::Copy "
 
 echo STATICPERL_OPTS is ${STATICPERL_OPTS}
 # make a perl executable and libperl that can be statically linked into rlm_perl
@@ -153,6 +154,10 @@ echo
 echo get rid of the inner-tunnel and control-socket sites
 unlink ${FREERAD_BUILD}/etc/raddb/sites-enabled/inner-tunnel
 unlink ${FREERAD_BUILD}/etc/raddb/sites-enabled/control-socket
+
+echo make sites-enabled/default a hard copy, because windows sucks at symlinks
+unlink ${FREERAD_BUILD}/etc/raddb/sites-enabled/default
+cp ${FREERAD_BUILD}/toopher/etc/raddb/sites-available/default ${FREERAD_BUILD}/etc/raddb/sites-enabled/default
 
 echo moving root dictionary to /etc/raddb/dictionary
 cp ${FREERAD}/share/dictionary ${FREERAD_BUILD}/etc/raddb/dictionary
