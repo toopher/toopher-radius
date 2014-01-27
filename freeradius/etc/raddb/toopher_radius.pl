@@ -220,7 +220,11 @@ sub do_authentication_state_machine
     _log('  ' . $foo);
     my %hsh = eval($foo);
     foreach my $k (keys %hsh) {
-      _log('    ' . $k . ' -> ' . $RAD_REQUEST{$k});
+      if ($k =~ /password/i){
+        _log('    ' . $k . ' -> ************');
+      } else {
+        _log('    ' . $k . ' -> ' . $hsh{$k});
+      }
     }
   }
   _log("-----------");
