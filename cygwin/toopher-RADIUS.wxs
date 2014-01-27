@@ -49,8 +49,12 @@
         <Directory Id="ProgramMenuToopher" Name="Toopher">
           <Directory Id="ProgramMenuToopherRADIUS" Name="Toopher-RADIUS Server">
             <Component Id="ProgramMenuShortcuts" Guid="A6913810-7522-127C-9B8C-1E55CCF37B0F">
+              <Shortcut Id="ReadmeShortcut"
+                  Name="View README"
+                  Target="[INSTALLDIR]README.html"
+                  WorkingDirectory="INSTALLDIR" />
               <Shortcut Id="RunToopherRadiusSetup"
-                  Name="Run Toopher-FreeRADIUS Setup"
+                  Name="Configuration"
                   Target="[INSTALLDIR]toopher_radius_config.cmd"
                   WorkingDirectory="INSTALLDIR" />
               <Shortcut Id="EditClientsDotConf"
@@ -58,20 +62,24 @@
                   Target="[INSTALLDIR]edit_clients_conf.cmd"
                   WorkingDirectory="INSTALLDIR" />
               <Shortcut Id="RunDebugServer"
-                  Name="Run Toopher-FreeRADIUS Server in Debug Mode"
+                  Name="Run in Debug Mode"
                   Target="[INSTALLDIR]debug_toopher_radius.cmd"
                   WorkingDirectory="INSTALLDIR" />
               <Shortcut Id="InstallServiceShortcut"
-                  Name="Install toopher-freeradius Service"
+                  Name="Install as a Service"
                   Target="[INSTALLDIR]install_service.cmd"
                   WorkingDirectory="INSTALLDIR" />
               <Shortcut Id="RestartServiceShortcut"
-                  Name="Restart toopher-freeradius Service"
+                  Name="Restart Service"
                   Target="[INSTALLDIR]restart_service.cmd"
                   WorkingDirectory="INSTALLDIR" />
               <Shortcut Id="UninstallServiceShortcut"
-                  Name="Uninstall toopher-freeradius Service"
+                  Name="Uninstall Service"
                   Target="[INSTALLDIR]uninstall_service.cmd"
+                  WorkingDirectory="INSTALLDIR" />
+              <Shortcut Id="ResetToopherPairingShortcut"
+                  Name="Reset User Pairing"
+                  Target="[INSTALLDIR]reset_user_pairing.cmd"
                   WorkingDirectory="INSTALLDIR" />
               <RegistryValue Root="HKCU" Key="Software\Toopher\Toopher FreeRADIUS Server"
                   Name="installed" Type="integer" Value="1" KeyPath="yes" />

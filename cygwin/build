@@ -147,6 +147,8 @@ rm perl.exe
 echo Copy configuration templates to /toopher
 mkdir ${FREERAD_BUILD}/toopher
 cp -fr ../freeradius/* ${FREERAD_BUILD}/toopher
+cp ../freeradius/etc/raddb/toopher_radius.pl ${FREERAD_BUILD}/etc/raddb/
+cp ../README.html ${FREERAD_BUILD}/
 cp ../linux/prep-config-files.pl ${FREERAD_BUILD}
 
 echo 
