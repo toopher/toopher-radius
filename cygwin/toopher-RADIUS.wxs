@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
   <Product Id="80293949-342A-44F1-B829-B2BA01D0645A" 
       Name="Toopher FreeRADIUS Server" 
-      Language="1033" Version="1.1" 
+      Language="1033" Version="1.2" 
       Manufacturer="Toopher, Inc" 
       UpgradeCode="2651E174-96CB-4B5F-AAE7-A53B2D79F041">
     <Package Description="Test file in a Product" Comments="Simple test" InstallerVersion="200" Compressed="yes" />
