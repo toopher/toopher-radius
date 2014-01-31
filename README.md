@@ -116,7 +116,7 @@ Toopher API Settings:
 
 RADIUS Prompt Text:
 
-* `PROMPT_PAIRING_CHALLENGE` Text displayed to the user when they first pair a mobile device with their account.
+* `PROMPT_PAIRING_CHALLENGE` : Text displayed to the user when they first pair a mobile device with their account.
 * `PROMPT_OTP_CHALLENGE` : Text displayed to the user when they need to validate with a One-Time Password (for instance, if their mobile device does not have internet access)
 
 LDAP settings you will need to edit:
