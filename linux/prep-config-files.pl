@@ -240,16 +240,12 @@ if ($raddb) {
     $versionParsers->{'0'}();
   }
   print " done.\n";
-  print "Detected configuration : \n";
-  foreach my $key (sort keys %{$toopherConfiguration}){
-    print "  $key = " . $toopherConfiguration->{$key} . "\n";
-  }
 }
 
 if ($prompt) {
   my %noprompt = (
     EXISTING_USERS_FILE_ENTRIES => 1,
-    
+    TERMINAL_IDENTIFIER => 1,
   );
   print "Please supply a value for each configuration variable.  [Enter] keeps default.\n";
   foreach my $key (sort keys %{$toopherConfiguration}) {
@@ -277,6 +273,12 @@ foreach my $file (@COPY_IF_MISSING) {
     print "  installing default version of $file\n";
     cp("$inputDir/$file", "$outputDir/$file");
   }
+}
+
+
+print "Successfully wrote configuration : \n";
+foreach my $key (sort keys %{$toopherConfiguration}){
+  print "  $key = " . $toopherConfiguration->{$key} . "\n";
 }
   
 
