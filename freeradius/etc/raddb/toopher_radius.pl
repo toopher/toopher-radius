@@ -40,6 +40,7 @@ use Net::OAuth::SignatureMethod::HMAC_SHA1;
 
 use constant    CHALLENGE_STATE_PAIR=> '0x6368616c6c656e67655f73746174655f70616972'; # unpack('H*', 'challenge_state_pair');
 use constant    CHALLENGE_STATE_OTP => '0x6368616c6c656e67655f73746174655f6f7470';   # unpack('H*', 'challenge_state_otp');
+use constant    CHALLENGE_STATE_TERMINAL => '0x6368616c6c656e67655f73746174655f7465726d696e616c'; # unpack("H*", "challenge_state_terminal");
 
 use constant    RLM_MODULE_REJECT=>    0;#  /* immediately reject the request */
 use constant    RLM_MODULE_FAIL=>      1;#  /* module failed, don't reply */
@@ -84,6 +85,14 @@ sub issue_pairing_challenge_prompt {
 sub issue_otp_challenge_prompt {
   $RAD_REPLY{'State'} = CHALLENGE_STATE_OTP;
   $RAD_REPLY{'Reply-Message'} = $config->{'prompts'}{'otp_challenge'};
+  $RAD_CHECK{'Response-Packet-Type'} = 'Access-Challenge';
+  return RLM_MODULE_HANDLED;
+}
+
+sub issue_name_terminal_challenge_prompt {
+  $RAD_REPLY{'State'} = CHALLENGE_STATE_TERMINAL;
+  $RAD_REPLY{'Prompt'} = 'Echo';
+  $RAD_REPLY{'Reply-Message'} = $config->{'prompts'}{'name_terminal_challenge'};
   $RAD_CHECK{'Response-Packet-Type'} = 'Access-Challenge';
   return RLM_MODULE_HANDLED;
 }
@@ -142,15 +151,20 @@ sub pair_with_toopher {
   }
 }
 
-
-# Zero-requester-storage authentication
-sub authenticate_zrs {
-  my $username = $RAD_REQUEST{'User-Name'};
+sub get_terminal_identifier
+{
   my $terminal_identifier = "";
   foreach my $term_id_attr_name (@{$config->{'terminal_identifier'}}) {
     _log('adding terminal identifier attribute: ' . $term_id_attr_name);
     $terminal_identifier .= $RAD_REQUEST{$term_id_attr_name};
   }
+  return $terminal_identifier;
+}
+
+# Zero-requester-storage authentication
+sub authenticate_zrs {
+  my $username = $RAD_REQUEST{'User-Name'};
+  my $terminal_identifier = &get_terminal_identifier;
   try {
     return poll_for_auth($api->authenticate_by_user_name($username, $terminal_identifier));
   } catch {
@@ -161,8 +175,7 @@ sub authenticate_zrs {
     } elsif ($_ eq ToopherAPI::ERROR_USER_UNKNOWN) {
       return &issue_pairing_challenge_prompt();
     } elsif ($_ eq ToopherAPI::ERROR_TERMINAL_UNKNOWN) {
-      _log('unknown terminal error...');
-      # can't really deal with this in a RADIUS context due to UI restrictions
+      return &issue_name_terminal_challenge_prompt();
     } elsif ($_ eq ToopherAPI::ERROR_PAIRING_DEACTIVATED) {
       return &issue_pairing_challenge_prompt();
     } else {
@@ -212,9 +225,24 @@ sub handle_otp_challenge_reply
   }
 }
 
+sub handle_name_terminal_challenge_reply
+{
+  _log('handle_name_terminal_challenge_reply');
+  my $username = $RAD_REQUEST{'User-Name'};
+  my $terminal_name = $RAD_REQUEST{'User-Password'};
+  my $terminal_identifier = &get_terminal_identifier;
+  try {
+    $api->create_user_terminal($username, $terminal_name, $terminal_identifier);
+    return &authenticate_zrs();
+  } catch {
+    _log('Error while naming user terminal: ' . $_);
+    return fail('Failed to name user terminal');
+  }
+}
+
 sub do_authentication_state_machine
 {
-  my ($authentication_func, $pairing_func, $otp_func) = @_;
+  my ($authentication_func, $pairing_func, $otp_func, $name_terminal_func) = @_;
   _log('do_authentication_state_machine');
   foreach my $foo (qw(%RAD_REQUEST %RAD_REPLY %RAD_CHECK %RAD_CONFIG)) {
     _log('  ' . $foo);
@@ -242,6 +270,9 @@ sub do_authentication_state_machine
   } elsif($state =~ CHALLENGE_STATE_OTP){
     _log('  CHALLENGE_STATE_OTP');
     $result = $otp_func->();
+  } elsif($state =~ CHALLENGE_STATE_TERMINAL){
+    _log('  CHALLENGE_STATE_TERMINAL');
+    $result = $name_terminal_func->();
   } else {
     $RAD_REPLY{'Reply-Message'} = 'unknown State message: ' . $state;
     $RAD_REPLY{'State'} = 'init';
@@ -256,7 +287,7 @@ sub do_authentication_state_machine
 
 sub authenticate_zrs_entry {
   _log('authenticate_zrs_entry');
-  return do_authentication_state_machine(\&authenticate_zrs, \&handle_pairing_challenge_reply, \&handle_otp_challenge_reply);
+  return do_authentication_state_machine(\&authenticate_zrs, \&handle_pairing_challenge_reply, \&handle_otp_challenge_reply, \&handle_name_terminal_challenge_reply);
 }
 
 sub unittest_toopher_rlm_perl
@@ -265,6 +296,8 @@ sub unittest_toopher_rlm_perl
   my $userName = 'user@example.com';
   my $passwd = 'password';
   my $pairingPhrase = 'awkward turtle';
+  my $terminalIdentifier = 'abcd1234';
+  my $terminalName = 'my terminal';
 
   # first time user login
   $RAD_REQUEST{'User-Name'} = $userName;
@@ -287,8 +320,21 @@ sub unittest_toopher_rlm_perl
   $ua->response->content('{"id":"1", "enabled":true, "user":{"id":"1","name":"some user"}}');
   _log('submitting pairing phrase');
   croak("Didn't complete pairing") unless authenticate_zrs_entry() == RLM_MODULE_OK;
-  
 
+  #missing terminal name
+  $RAD_REQUEST{'User-Name'} = $userName;
+  $RAD_REQUEST{'User-Password'} = $passwd;
+  $config->{'terminal_identifier'} = ['Some-Random-Key'];
+  $RAD_REQUEST{'Some-Random-Key'} = $terminalIdentifier;
+  delete $RAD_REQUEST{'State'};
+
+  $ua->response->code(409);
+  $ua->response->content('{"error_code":706, "error_message":"No matching terminal exists."}');
+  croak("Didn't return RLM_MODULE_HANDLED") unless authenticate_zrs_entry() == RLM_MODULE_HANDLED;
+  croak("didn't get radius challenge") unless $RAD_REPLY{'State'} eq CHALLENGE_STATE_TERMINAL;
+  croak("didn't get correct channenge") unless $RAD_REPLY{'Reply-Message'} eq $config->{'prompts'}{'name_terminal_challenge'};
+  croak("wrong packet type") unless $RAD_CHECK{'Response-Packet-Type'} eq 'Access-Challenge';
+  
   # regular log-in
   $RAD_REQUEST{'User-Name'} = $userName;
   $RAD_REQUEST{'User-Password'} = $passwd;
