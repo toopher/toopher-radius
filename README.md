@@ -1,4 +1,4 @@
-Toopher-RADIUS for Windows version 1.1
+Toopher-RADIUS version 1.2
 ======================================
 
 Toopher uses the popular open-source [FreeRadius server](http://freeradius.org/) as the base for its RADIUS solution.
@@ -166,3 +166,19 @@ In some cases, a user may require administrator assistance to recover a lost pai
 Support Information
 ---------------------
 Please do not hesitate to contact [support@toopher.com](mailto:support@toopher.com) with any questions or concerns.
+
+Changelog
+---------
+
+v1.2
+
+* Add support for naming user terminals and enabling automation
+
+v1.1
+
+* Add Windows Installer
+
+v1.0
+
+* Remove local storage requirements
+* Support LDAP/ActiveDirectory integration without requiring schema changes
