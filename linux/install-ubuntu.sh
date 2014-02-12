@@ -30,7 +30,7 @@ echo Installing/Updating CPAN modules.  Some modules might take several attempts
 # grep for failure messages and retry for each module
 apt-get -y install libwww-perl
 apt-get -y install libcrypt-ssleay-perl
-CPAN_MODULES=( Net::OAuth::ConsumerRequest JSON::XS JSON LWP::Protocol::https Try::Tiny URL::Encode URI::Escape )
+CPAN_MODULES=( Net::OAuth::ConsumerRequest JSON::XS JSON LWP::Protocol::https Try::Tiny URL::Encode URI::Escape Digest::SHA )
 
 # make sure cpan is configured first
 echo exit | cpan

@@ -25,6 +25,7 @@ use FindBin;
 use lib "$FindBin::Bin/";
 use Carp ;
 use Try::Tiny;
+use Digest::SHA qw(sha256_base64);
 $Carp::Verbose = 1;
 
 my $standalone = $ARGV[0];
@@ -155,11 +156,12 @@ sub pair_with_toopher {
 sub get_terminal_identifier
 {
   my $terminal_identifier = "";
+  my $username = $RAD_REQUEST{'User-Name'};
   foreach my $term_id_attr_name (@{$config->{'terminal_identifier'}}) {
     _log('adding terminal identifier attribute: ' . $term_id_attr_name);
     $terminal_identifier .= $RAD_REQUEST{$term_id_attr_name};
   }
-  return $terminal_identifier;
+  return sha256_base64($username . $terminal_identifier);
 }
 
 # Zero-requester-storage authentication
