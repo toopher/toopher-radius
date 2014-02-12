@@ -11,6 +11,34 @@ use warnings FATAL => 'all';
 use Term::ReadPassword;
 use Authen::Radius;
 use Data::Dumper;
+use IO::Socket::INET;
+
+use constant RADIUS_HOST => '127.0.0.1';
+use constant RADIUS_SECRET => 'testing123';
+use constant RADIUS_TIMEOUT => 60;
+use constant CALLING_STATION_ID => 'detect';
+
+sub get_local_ip_address {
+  my $socket = IO::Socket::INET->new(
+      Proto       => 'udp',
+      PeerAddr    => '198.41.0.4', # a.root-servers.net
+      PeerPort    => '53', # DNS
+  );
+
+  # A side-effect of making a socket connection is that our IP address
+  # is available from the 'sockhost' method
+  my $local_ip_address = $socket->sockhost;
+
+  return $local_ip_address;
+}
+
+my $calling_station_id;
+if (CALLING_STATION_ID eq 'detect') {
+  $calling_station_id = get_local_ip_address();
+} else {
+  $calling_station_id = CALLING_STATION_ID;
+}
+
 
 my %response_codes = (
         1   =>   'Access-Request',
@@ -25,26 +53,28 @@ my %response_codes = (
 
 );
 
+
 my $username = $ARGV[0];
 my $password = $ARGV[1];
 
 unless (defined($username)) {
-        print "Enter username: ";
-        $username = <STDIN>;
-        chomp($username);
+  print "Enter username: ";
+  $username = <STDIN>;
+  chomp($username);
 }
 
 unless (defined($password)) {
-        $password = read_password('Enter password: ');
+  $password = read_password('Enter password: ');
 }
 
-my $r = new Authen::Radius(Host => '127.0.0.1', Secret => 'testing123', Timeout=>60);
+my $r = new Authen::Radius(Host => RADIUS_HOST, Secret => RADIUS_SECRET, Timeout=>RADIUS_TIMEOUT);
 Authen::Radius->load_dictionary();
 Authen::Radius->load_dictionary('/etc/freeradius/dictionary');
 
 $r->add_attributes (
-                { Name => 'User-Name', Value => $username },
-                { Name => 'User-Password', Value => $password },
+    { Name => 'User-Name', Value => $username },
+    { Name => 'User-Password', Value => $password },
+    { Name => 'Calling-Station-Id', Value => $calling_station_id },
 );
 
 $r->set_timeout(time() + 60);
@@ -53,33 +83,43 @@ my $type = $r->recv_packet() || die($r->get_error());
 
 print "server response type = $response_codes{$type} ($type)\n";
 
-exit 1 unless $type == 11;
+my ($state, $replyMessage, $otp, $echoPrompt);
 
-my $state = undef;
-my $replyMessage = "enter otp:";
+while($type == ACCESS_CHALLENGE){
+  $state = undef;
+  $replyMessage = "enter otp:";
+  $echoPrompt = 0;
 
-for $a ($r->get_attributes()) {
-	print $a->{Name} . ' -> ' . $a->{RawValue} . "\n";
-        if ($a->{Name} eq 'State') {
-                $state = $a->{RawValue};
-        } elsif ($a->{Name} eq 'Reply-Message') {
-		$replyMessage = $a->{RawValue};
-	}
+  for $a ($r->get_attributes()) {
+    #print $a->{Name} . ' -> ' . $a->{RawValue} . "\n";
+    if ($a->{Name} eq 'State') {
+      $state = $a->{RawValue};
+    } elsif ($a->{Name} eq 'Reply-Message') {
+      $replyMessage = $a->{RawValue};
+    } elsif ($a->{Name} eq 'Prompt') {
+      $echoPrompt = $a->{RawValue};
+    }
+  }
+
+  print $replyMessage . ' ';
+  if ($echoPrompt) {
+    $otp = <STDIN>;
+  } else {
+    $otp = read_password('');
+  }
+  chomp($otp);
+
+  $r->add_attributes (
+      { Name => 'User-Name', Value => $username },
+      { Name => 'User-Password', Value => $otp },
+  );
+
+  $r->set_timeout(time() + 60);
+  $r->send_packet(ACCESS_REQUEST)  || die;
+  $type = $r->recv_packet() || die($r->get_error());
+  print "server response type = $response_codes{$type} ($type)\n";
 }
 
-print $replyMessage . ' ';
-my $otp = <STDIN>;
-chomp($otp);
 
-$r->add_attributes (
-                { Name => 'User-Name', Value => $username },
-                { Name => 'User-Password', Value => $otp },
-);
-
-$r->set_timeout(time() + 60);
-$r->send_packet(ACCESS_REQUEST)  || die;
-$type = $r->recv_packet() || die($r->get_error());
-
-print "server response type = $response_codes{$type} ($type)\n";
 
 exit 1 unless $type == 2;
