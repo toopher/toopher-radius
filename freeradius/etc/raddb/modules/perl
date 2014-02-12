@@ -2,16 +2,6 @@
 #
 #  $Id$
 
-perl handle_otp_challenge_reply {
-  module = ${confdir}/toopher_radius.pl
-  func_authenticate = handle_otp_challenge_reply
-}
-
-perl handle_pairing_challenge_reply {
-  module = ${confdir}/toopher_radius.pl
-  func_authenticate = handle_pairing_challenge_reply
-}
-
 perl do_toopher_auth {
   module = ${confdir}/toopher_radius.pl
   func_authenticate = authenticate_zrs_entry
