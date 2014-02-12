@@ -40,7 +40,7 @@ use Net::OAuth::SignatureMethod::HMAC_SHA1;
 
 use constant    CHALLENGE_STATE_PAIR=> '0x6368616c6c656e67655f73746174655f70616972'; # unpack('H*', 'challenge_state_pair');
 use constant    CHALLENGE_STATE_OTP => '0x6368616c6c656e67655f73746174655f6f7470';   # unpack('H*', 'challenge_state_otp');
-use constant    CHALLENGE_STATE_TERMINAL => '0x6368616c6c656e67655f73746174655f7465726d696e616c'; # unpack("H*", "challenge_state_terminal");
+use constant    CHALLENGE_STATE_TERMINAL => '0x7465726d696e616c5f69643a'; # unpack("H*", "terminal_id:");
 
 use constant    RLM_MODULE_REJECT=>    0;#  /* immediately reject the request */
 use constant    RLM_MODULE_FAIL=>      1;#  /* module failed, don't reply */
@@ -90,7 +90,8 @@ sub issue_otp_challenge_prompt {
 }
 
 sub issue_name_terminal_challenge_prompt {
-  $RAD_REPLY{'State'} = CHALLENGE_STATE_TERMINAL;
+  my ($terminal_identifier) = @_;
+  $RAD_REPLY{'State'} = CHALLENGE_STATE_TERMINAL . unpack("H*", $terminal_identifier);
   $RAD_REPLY{'Prompt'} = 'Echo';
   $RAD_REPLY{'Reply-Message'} = $config->{'prompts'}{'name_terminal_challenge'};
   $RAD_CHECK{'Response-Packet-Type'} = 'Access-Challenge';
@@ -163,8 +164,11 @@ sub get_terminal_identifier
 
 # Zero-requester-storage authentication
 sub authenticate_zrs {
+  my ($terminal_identifier) = @_;
   my $username = $RAD_REQUEST{'User-Name'};
-  my $terminal_identifier = &get_terminal_identifier;
+  if (length $terminal_identifier == 0) {
+    $terminal_identifier = &get_terminal_identifier;
+  }
   try {
     return poll_for_auth($api->authenticate_by_user_name($username, $terminal_identifier));
   } catch {
@@ -175,7 +179,7 @@ sub authenticate_zrs {
     } elsif ($_ eq ToopherAPI::ERROR_USER_UNKNOWN) {
       return &issue_pairing_challenge_prompt();
     } elsif ($_ eq ToopherAPI::ERROR_TERMINAL_UNKNOWN) {
-      return &issue_name_terminal_challenge_prompt();
+      return &issue_name_terminal_challenge_prompt($terminal_identifier);
     } elsif ($_ eq ToopherAPI::ERROR_PAIRING_DEACTIVATED) {
       return &issue_pairing_challenge_prompt();
     } else {
@@ -227,13 +231,13 @@ sub handle_otp_challenge_reply
 
 sub handle_name_terminal_challenge_reply
 {
-  _log('handle_name_terminal_challenge_reply');
+  my ($terminal_identifier) = @_;
+  _log('handle_name_terminal_challenge_reply: terminal_id = ' . $terminal_identifier);
   my $username = $RAD_REQUEST{'User-Name'};
   my $terminal_name = $RAD_REQUEST{'User-Password'};
-  my $terminal_identifier = &get_terminal_identifier;
   try {
     $api->create_user_terminal($username, $terminal_name, $terminal_identifier);
-    return &authenticate_zrs();
+    return &authenticate_zrs($terminal_identifier);
   } catch {
     _log('Error while naming user terminal: ' . $_);
     return fail('Failed to name user terminal');
@@ -272,7 +276,10 @@ sub do_authentication_state_machine
     $result = $otp_func->();
   } elsif($state =~ CHALLENGE_STATE_TERMINAL){
     _log('  CHALLENGE_STATE_TERMINAL');
-    $result = $name_terminal_func->();
+    my $term_id_unpacked = substr($state, length(CHALLENGE_STATE_TERMINAL));
+    my $terminal_identifier = pack("H*", $term_id_unpacked);
+    _log('    terminal_identifier = ' . $terminal_identifier);
+    $result = $name_terminal_func->($terminal_identifier);
   } else {
     $RAD_REPLY{'Reply-Message'} = 'unknown State message: ' . $state;
     $RAD_REPLY{'State'} = 'init';
