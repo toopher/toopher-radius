@@ -40,7 +40,7 @@ do
   do
     let counter=counter+1
     echo Installing $module \(attempt ${counter}\)
-    ./cpanm $module 2>&1 | grep 'fatal error'
+    ./cpanm $module 2>&1 | grep 'Bailing out the installation'
     mod_install_success=$?
   done
 done
