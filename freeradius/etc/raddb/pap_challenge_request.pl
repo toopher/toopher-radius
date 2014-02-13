@@ -17,6 +17,7 @@ use constant RADIUS_HOST => '127.0.0.1';
 use constant RADIUS_SECRET => 'testing123';
 use constant RADIUS_TIMEOUT => 60;
 use constant CALLING_STATION_ID => 'detect';
+use constant RADDB => '/etc/raddb';
 
 sub get_local_ip_address {
   my $socket = IO::Socket::INET->new(
@@ -69,7 +70,7 @@ unless (defined($password)) {
 
 my $r = new Authen::Radius(Host => RADIUS_HOST, Secret => RADIUS_SECRET, Timeout=>RADIUS_TIMEOUT);
 Authen::Radius->load_dictionary();
-Authen::Radius->load_dictionary('/etc/freeradius/dictionary');
+Authen::Radius->load_dictionary(RADDB . '/dictionary');
 
 $r->add_attributes (
     { Name => 'User-Name', Value => $username },
