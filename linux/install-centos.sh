@@ -22,6 +22,9 @@ mkdir $TEMP_DIR/raddb
 mkdir $TEMP_DIR/raddb/modules
 mkdir $TEMP_DIR/raddb/sites-available
 
+echo installing development tools if necessary
+yum -y groupinstall 'Development Tools'
+
 echo Installing/Updating CPAN modules.  Some modules might take several attempts.
 # install needed CPAN modules.  This can still fail for unknown reasons, so
 # grep for failure messages and retry for each module
@@ -59,9 +62,8 @@ if [ -e $RADDB_DIR/do_toopher_auth.pl ]; then
   rm $RADDB_DIR/do_toopher_auth.pl
 fi
 
-echo 
-echo installing freeradius...
-rpm -i centos/freeradius*${ARCH}.rpm
+echo installing freeradius packages and dependencies.
+yum -y --nogpgcheck localinstall centos/freeradius*${ARCH}.rpm
 
 service radiusd stop
 
