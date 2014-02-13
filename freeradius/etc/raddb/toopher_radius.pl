@@ -161,7 +161,11 @@ sub get_terminal_identifier
     _log('adding terminal identifier attribute: ' . $term_id_attr_name);
     $terminal_identifier .= $RAD_REQUEST{$term_id_attr_name};
   }
-  return sha256_base64($username . $terminal_identifier);
+  if (length $terminal_identifier) { 
+    return sha256_base64($username . $terminal_identifier);
+  } else {
+    return '';
+  }
 }
 
 # Zero-requester-storage authentication
