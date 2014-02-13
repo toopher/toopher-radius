@@ -1,7 +1,7 @@
 Summary: High-performance and highly configurable free RADIUS server
 Name: freeradius
 Version: 2.2.3
-Release: 6-toopher%{?dist}
+Release: 6toopher%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: System Environment/Daemons
 URL: http://www.freeradius.org/
@@ -587,7 +587,7 @@ exit 0
 %{_libdir}/freeradius/rlm_sql_unixodbc-%{version}.so
 
 %changelog
-* Thu Feb 13 2014 Drew Shafer <drew@toopher.com> - 2.2.3-6-toopher
+* Thu Feb 13 2014 Drew Shafer <drew@toopher.com> - 2.2.3-6toopher
 - Convert back to SystemV init/upstart
 
 * Tue Jan 14 2014 John Dennis <jdennis@redhat.com> - 2.2.3-6
