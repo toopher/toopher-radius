@@ -29,8 +29,6 @@ echo Installing/Updating CPAN modules.  Some modules might take several attempts
 #apt-get -y install libcrypt-ssleay-perl
 CPAN_MODULES=( Net::OAuth::ConsumerRequest JSON::XS JSON LWP::Protocol::https Try::Tiny URL::Encode URI::Escape Digest::SHA )
 
-# make sure cpan is configured first
-echo exit | cpan
 for module in "${CPAN_MODULES[@]}"
 do
   counter=0
@@ -39,7 +37,7 @@ do
   do
     let counter=counter+1
     echo Installing $module \(attempt ${counter}\)
-    PERL_MM_USE_DEFAULT=1 cpan $module 2>&1 | grep 'fatal error'
+    ./cpanm $module 2>&1 | grep 'fatal error'
     mod_install_success=$?
   done
 done
