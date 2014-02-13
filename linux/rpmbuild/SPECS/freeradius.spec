@@ -1,16 +1,15 @@
 Summary: High-performance and highly configurable free RADIUS server
 Name: freeradius
 Version: 2.2.3
-Release: 6%{?dist}
+Release: 6-toopher%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: System Environment/Daemons
 URL: http://www.freeradius.org/
 
 Source0: ftp://ftp.freeradius.org/pub/radius/freeradius-server-%{version}.tar.bz2
-Source100: radiusd.service
+Source100: freeradius-radiusd-init
 Source102: freeradius-logrotate
 Source103: freeradius-pam-conf
-Source104: %{name}-tmpfiles.conf
 
 Patch1: freeradius-cert-config.patch
 Patch2: freeradius-dhcp_sqlippool.patch
@@ -20,6 +19,8 @@ Obsoletes: freeradius-libs
 
 %define docdir %{_docdir}/freeradius-%{version}
 %define initddir %{?_initddir:%{_initddir}}%{!?_initddir:%{_initrddir}}
+
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires: autoconf
 BuildRequires: gdbm-devel
@@ -32,14 +33,10 @@ BuildRequires: net-snmp-devel
 BuildRequires: net-snmp-utils
 BuildRequires: readline-devel
 BuildRequires: libpcap-devel
-BuildRequires: systemd-units
 
-Requires: openssl
 Requires(pre): shadow-utils glibc-common
-Requires(post): systemd-sysv
-Requires(post): systemd-units
-Requires(preun): systemd-units
-Requires(postun): systemd-units
+Requires(post): /sbin/chkconfig
+Requires(preun): /sbin/chkconfig
 
 %description
 The FreeRADIUS Server Project is a high performance and highly configurable
@@ -146,9 +143,6 @@ This plugin provides the unixODBC support for the FreeRADIUS server project.
 %prep
 %setup -q -n freeradius-server-%{version}
 %patch1 -p1 -b .cert-config
-# do not make backup file for module configs, the backup will be installed
-%patch2 -p1
-
 # Some source files mistakenly have execute permissions set
 find $RPM_BUILD_DIR/freeradius-server-%{version} \( -name '*.c' -o -name '*.h' \) -a -perm /0111 -exec chmod a-x {} +
 
@@ -200,7 +194,9 @@ perl -pi -e 's:sys_lib_search_path_spec=.*:sys_lib_search_path_spec="/lib64 /usr
 make
 
 %install
-mkdir -p $RPM_BUILD_ROOT/%{_localstatedir}/lib/radiusd
+rm -rf $RPM_BUILD_ROOT
+mkdir -p $RPM_BUILD_ROOT/var/run/radiusd
+mkdir -p $RPM_BUILD_ROOT/var/lib/radiusd
 # fix for bad libtool bug - can not rebuild dependent libs and bins
 #FIXME export LD_LIBRARY_PATH=$RPM_BUILD_ROOT/%{_libdir}
 make install R=$RPM_BUILD_ROOT
@@ -212,14 +208,9 @@ perl -i -pe 's/^#group =.*$/group = radiusd/' $RADDB/radiusd.conf
 mkdir -p $RPM_BUILD_ROOT/var/log/radius/radacct
 touch $RPM_BUILD_ROOT/var/log/radius/{radutmp,radius.log}
 
-install -D -m 755 %{SOURCE100} $RPM_BUILD_ROOT/%{_unitdir}/radiusd.service
+install -D -m 755 %{SOURCE100} $RPM_BUILD_ROOT/%{initddir}/radiusd
 install -D -m 644 %{SOURCE102} $RPM_BUILD_ROOT/%{_sysconfdir}/logrotate.d/radiusd
 install -D -m 644 %{SOURCE103} $RPM_BUILD_ROOT/%{_sysconfdir}/pam.d/radiusd
-
-mkdir -p %{buildroot}%{_sysconfdir}/tmpfiles.d
-mkdir -p %{buildroot}%{_localstatedir}/run/
-install -d -m 0710 %{buildroot}%{_localstatedir}/run/radiusd/
-install -m 0644 %{SOURCE104} %{buildroot}%{_sysconfdir}/tmpfiles.d/radiusd.conf
 
 # remove unneeded stuff
 rm -rf doc/00-OLD
@@ -263,13 +254,13 @@ EOF
 # Make sure our user/group is present prior to any package or subpackage installation
 %pre
 getent group  radiusd >/dev/null || /usr/sbin/groupadd -r -g 95 radiusd > /dev/null 2>&1
-getent passwd radiusd >/dev/null || /usr/sbin/useradd  -r -g radiusd -u 95 -c "radiusd user" -d %{_localstatedir}/lib/radiusd -s /sbin/nologin radiusd > /dev/null 2>&1
+getent passwd radiusd >/dev/null || /usr/sbin/useradd  -r -g radiusd -u 95 -c "radiusd user" -s /sbin/nologin radiusd > /dev/null 2>&1
 exit 0
 
 %post
-%systemd_post radiusd.service
 if [ $1 -eq 1 ]; then           # install
   # Initial installation
+  /sbin/chkconfig --add radiusd
   if [ ! -e /etc/raddb/certs/server.pem ]; then
     /sbin/runuser -g radiusd -c 'umask 007; /etc/raddb/certs/bootstrap' > /dev/null 2>&1
   fi
@@ -277,36 +268,31 @@ fi
 exit 0
 
 %preun
-%systemd_preun radiusd.service
+if [ $1 -eq 0 ]; then           # uninstall
+  /sbin/service radiusd stop > /dev/null 2>&1
+  /sbin/chkconfig --del radiusd
+fi
+exit 0
+
 
 %postun
-%systemd_postun_with_restart radiusd.service
+if [ $1 -ge 1 ]; then           # upgrade
+  /sbin/service radiusd condrestart >/dev/null 2>&1
+fi
 if [ $1 -eq 0 ]; then           # uninstall
   getent passwd radiusd >/dev/null && /usr/sbin/userdel  radiusd > /dev/null 2>&1
   getent group  radiusd >/dev/null && /usr/sbin/groupdel radiusd > /dev/null 2>&1
 fi
 exit 0
 
-%triggerun -- freeradius < 2.1.11-5
-# Save the current service runlevel info
-# User must manually run systemd-sysv-convert --apply radiusd
-# to migrate them to systemd targets
-/usr/bin/systemd-sysv-convert --save radiusd >/dev/null 2>&1 ||:
-
-# Run these because the SysV package being removed won't do them
-/sbin/chkconfig --del radiusd >/dev/null 2>&1 || :
-/bin/systemctl try-restart radiusd.service >/dev/null 2>&1 || :
-
-
 %files
 %defattr(-,root,root)
 %doc %{docdir}/
 %config(noreplace) %{_sysconfdir}/pam.d/radiusd
 %config(noreplace) %{_sysconfdir}/logrotate.d/radiusd
-%{_unitdir}/radiusd.service
-%config %{_sysconfdir}/tmpfiles.d/radiusd.conf
-%dir %attr(710,radiusd,radiusd) %{_localstatedir}/run/radiusd
-%dir %attr(755,radiusd,radiusd) %{_localstatedir}/lib/radiusd
+%{initddir}/radiusd
+%dir %attr(710,radiusd,radiusd) /var/run/radiusd
+%dir %attr(755,radiusd,radiusd) /var/lib/radiusd
 # configs
 %dir %attr(755,root,radiusd) /etc/raddb
 %defattr(-,root,radiusd)
@@ -601,6 +587,9 @@ exit 0
 %{_libdir}/freeradius/rlm_sql_unixodbc-%{version}.so
 
 %changelog
+* Thu Feb 13 2014 Drew Shafer <drew@toopher.com> - 2.2.3-6-toopher
+- Convert back to SystemV init/upstart
+
 * Tue Jan 14 2014 John Dennis <jdennis@redhat.com> - 2.2.3-6
 - Upgrade to upstream 2.2.3 release
   See /usr/share/doc/freeradius-2.2.3/ChangeLog for details
