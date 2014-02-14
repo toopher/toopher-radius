@@ -1,8 +1,8 @@
-<h1>Toopher-RADIUS for Windows version 1.1</h1>
+<h1>Toopher-RADIUS version 1.2.1</h1>
 <p>Toopher uses the popular open-source <a href="http://freeradius.org/">FreeRadius server</a> as the base for its RADIUS solution.</p>
 <h2>Installation Requirements</h2>
 <ul>
-<li>Windows Server 2008 or Ubuntu Server 12.04 LTS: Other Windows OS versions are likely to work without issue.  For Linux environments, Ubuntu Server 12.04 LTS is currently the primary installation target.</li>
+<li>Windows Server 2008, Ubuntu Server 12.04 LTS, CentOS/RHEL 6.4 64-bit : Other Windows OS versions are likely to work without issue.  For Linux environments, only those listed have been tested.</li>
 <li>Internet Connectivity: The Toopher-RADIUS Server must be able to contact the <a href="https://api.toopher.com/">Toopher Web API</a>.  Administrators should add appropriate firewall exceptions as necessary.</li>
 <li>RADIUS-Compatible Gateway Device: The user-facing device or service that is used with the Toopher-RADIUS server must support the RADIUS <code>Access-Challenge</code> packet type, allowing the Toopher-RADIUS server to request additional data from the user (for instance, when pairing a new mobile device).  Almost all commercial VPN products satisfy this requirement, although exceptions do exist (most notably the Microsoft RRAS service)</li>
 </ul>
@@ -14,6 +14,10 @@ and is the recommended deployment method. </p>
 <p>On the LDAP server, create a group called <code>ToopherUsers</code></p>
 <p>In addition, if your LDAP server is not configured to allow anonymous search, you should create a user LDAP account that has <code>search</code> permission for the <code>sAMAccountName</code> attribute (if using Active Directory), or <code>uid</code> (for most other LDAP schemas).</p>
 <h2>Installing the RADIUS Server</h2>
+<h3>Installing on CentOS / RHEL</h3>
+<p>The included <code>install-centos.sh</code> script takes care of the full installation process:</p>
+<pre><code>cd linux &amp;&amp; sudo ./install-centos.sh
+</code></pre>
 <h3>Installing on Ubuntu (or other debian-based distro)</h3>
 <p>ensure that the OS is updated, the <code>build-essential</code> package is installed, and <code>CPAN</code> in up-to-date:</p>
 <pre><code>sudo apt-get update
@@ -30,8 +34,7 @@ cpan&gt; o conf init urllist
 cpan&gt; o conf commit
 cpan&gt; exit
 </code></pre>
-<h3>Installing on other linux</h3>
-<p>Automated install scripts for Redhat and SuSE distros should be available soon.  Please contact <a href="mailto:support@toopher.com">support@toopher.com</a> if you need accelerated access to installers for alternate distributions.</p>
+<p>Ubuntu installs the FreeRADIUS configuration files to <code>/etc/freeradius</code> instead of <code>/etc/raddb</code>.  Where this document references files under <code>/etc/raddb</code>, please edit the corresponding file under <code>/etc/freeradius</code>.</p>
 <h3>Installing on Windows</h3>
 <p>The included MSI package will install the Toopher-RADIUS server for windows, along with necessary configuration tools.</p>
 <h2>RADIUS Configuration</h2>
@@ -42,7 +45,7 @@ cpan&gt; exit
      secret = s3cr3t
 }
 </code></pre>
-<p>Before you can run the server, you need to edit /etc/freeradius/toopher_radius_config.pm to suit your site.</p>
+<p>Before you can run the server, you need to edit /etc/raddb/toopher_radius_config.pm to suit your site.</p>
 <pre><code>my $toopher_config =
 {
   toopher_api =&gt; {
@@ -60,7 +63,7 @@ cpan&gt; exit
 <p>At a minimum, you must change the "key" and "secret" values in the
 toopher_api section.  You can generate new requester credentials at the 
 <a href="https://dev.toopher.com">Toopher Developer Site</a>.</p>
-<p>Additionally, edit /etc/freeradius/modules/ldap to point to your LDAP / Active Directory server</p>
+<p>Additionally, edit /etc/raddb/modules/ldap to point to your LDAP / Active Directory server</p>
 <pre><code>conf
   ldap {
     server = "192.168.1.201"
@@ -105,8 +108,11 @@ should work for ActiveDirectory and <a href="http://tools.ietf.org/html/rfc2798"
 <li><code>LDAP_SEARCH_FILTER</code></li>
 </ul>
 <h2>Start the RADIUS server</h2>
-<h3>Linux</h3>
-<pre><code>sudo service freeradius start    # or service radiusd start, depending on the distro
+<h3>Ubuntu</h3>
+<pre><code>sudo service freeradius start
+</code></pre>
+<h3>CentOS / RHEL</h3>
+<pre><code>sudo service radiusd start
 </code></pre>
 <h3>Windows</h3>
 <pre><code>net start toopher-freeradius
@@ -125,3 +131,21 @@ should work for ActiveDirectory and <a href="http://tools.ietf.org/html/rfc2798"
 </ul>
 <h2>Support Information</h2>
 <p>Please do not hesitate to contact <a href="mailto:support@toopher.com">support@toopher.com</a> with any questions or concerns.</p>
+<h2>Changelog</h2>
+<p>v1.2.1</p>
+<ul>
+<li>Add CentOS/RHEL installer</li>
+</ul>
+<p>v1.2</p>
+<ul>
+<li>Add support for naming user terminals and enabling automation</li>
+</ul>
+<p>v1.1</p>
+<ul>
+<li>Add Windows Installer</li>
+</ul>
+<p>v1.0</p>
+<ul>
+<li>Remove local storage requirements</li>
+<li>Support LDAP/ActiveDirectory integration without requiring schema changes</li>
+</ul>

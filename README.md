@@ -1,11 +1,11 @@
-Toopher-RADIUS version 1.2
+Toopher-RADIUS version 1.2.1
 ======================================
 
 Toopher uses the popular open-source [FreeRadius server](http://freeradius.org/) as the base for its RADIUS solution.
 
 Installation Requirements
 -------------------------
-* Windows Server 2008 or Ubuntu Server 12.04 LTS: Other Windows OS versions are likely to work without issue.  For Linux environments, Ubuntu Server 12.04 LTS is currently the primary installation target.
+* Windows Server 2008, Ubuntu Server 12.04 LTS, CentOS/RHEL 6.4 64-bit : Other Windows OS versions are likely to work without issue.  For Linux environments, only those listed have been tested.
 * Internet Connectivity: The Toopher-RADIUS Server must be able to contact the [Toopher Web API](https://api.toopher.com/).  Administrators should add appropriate firewall exceptions as necessary.
 * RADIUS-Compatible Gateway Device: The user-facing device or service that is used with the Toopher-RADIUS server must support the RADIUS `Access-Challenge` packet type, allowing the Toopher-RADIUS server to request additional data from the user (for instance, when pairing a new mobile device).  Almost all commercial VPN products satisfy this requirement, although exceptions do exist (most notably the Microsoft RRAS service)
 
@@ -26,6 +26,11 @@ In addition, if your LDAP server is not configured to allow anonymous search, yo
 
 Installing the RADIUS Server
 -----------------------------
+### Installing on CentOS / RHEL
+The included `install-centos.sh` script takes care of the full installation process:
+
+    cd linux && sudo ./install-centos.sh
+
 ### Installing on Ubuntu (or other debian-based distro)
 ensure that the OS is updated, the `build-essential` package is installed, and `CPAN` in up-to-date:
 
@@ -45,8 +50,7 @@ If the installation script stalls on a CPAN step, you may need to update the CPA
     cpan> o conf commit
     cpan> exit
 
-### Installing on other linux
-Automated install scripts for Redhat and SuSE distros should be available soon.  Please contact [support@toopher.com](mailto:support@toopher.com) if you need accelerated access to installers for alternate distributions.
+Ubuntu installs the FreeRADIUS configuration files to `/etc/freeradius` instead of `/etc/raddb`.  Where this document references files under `/etc/raddb`, please edit the corresponding file under `/etc/freeradius`.
 
 ### Installing on Windows
 The included MSI package will install the Toopher-RADIUS server for windows, along with necessary configuration tools.
@@ -62,7 +66,7 @@ Add the IP address of your VPN solution to /etc/raddb/clients.conf.  This will v
     }
 
 
-Before you can run the server, you need to edit /etc/freeradius/toopher_radius_config.pm to suit your site.
+Before you can run the server, you need to edit /etc/raddb/toopher_radius_config.pm to suit your site.
 
     my $toopher_config =
     {
@@ -82,7 +86,7 @@ At a minimum, you must change the "key" and "secret" values in the
 toopher_api section.  You can generate new requester credentials at the 
 [Toopher Developer Site](https://dev.toopher.com).
 
-Additionally, edit /etc/freeradius/modules/ldap to point to your LDAP / Active Directory server
+Additionally, edit /etc/raddb/modules/ldap to point to your LDAP / Active Directory server
 
     conf
       ldap {
@@ -135,8 +139,11 @@ should work for ActiveDirectory and [inetOrgPerson](http://tools.ietf.org/html/r
 
 Start the RADIUS server
 -----------------------
-### Linux
-    sudo service freeradius start    # or service radiusd start, depending on the distro
+### Ubuntu
+    sudo service freeradius start
+
+### CentOS / RHEL
+    sudo service radiusd start
 
 ### Windows
     net start toopher-freeradius
@@ -169,6 +176,10 @@ Please do not hesitate to contact [support@toopher.com](mailto:support@toopher.c
 
 Changelog
 ---------
+
+v1.2.1
+
+* Add CentOS/RHEL installer
 
 v1.2
 

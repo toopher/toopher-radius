@@ -41,3 +41,7 @@ Unfortunatlely, yum-builddep sucks, so the build dependencies must be installed 
         zlib-devel net-snmp-devel net-snmp-utils readline-devel libpcap-devel \
         systemd-units openldap-devel krb5-devel perl-ExtUtils-Embed python-devel \
         mysql-devel postgresql-devel unixODBC-devel systemd-units
+
+Now, build the RPM
+
+    rpmbuild -ba ~/rpmbuild/SPECS/freeradius.spec
