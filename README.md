@@ -1,4 +1,4 @@
-Toopher-RADIUS version 1.2.1
+Toopher-RADIUS version 1.3
 ======================================
 
 Toopher uses the popular open-source [FreeRadius server](http://freeradius.org/) as the base for its RADIUS solution.
@@ -176,6 +176,10 @@ Please do not hesitate to contact [support@toopher.com](mailto:support@toopher.c
 
 Changelog
 ---------
+
+v1.3
+
+* Add support for Feature Phone (SMS-based) pairings
 
 v1.2.1
 
