@@ -51,9 +51,9 @@ sub new
 
 sub pair
 {
-  my ($self, $pairing_phrase, $user_name, $extras) = @_;
+  my ($self, $pairing_token, $user_name, $extras) = @_;
   my $params = $extras || {};
-  $params->{'pairing_phrase'} = $pairing_phrase;
+  $params->{'pairing_token'} = $pairing_token;
   $params->{'user_name'} = $user_name;
   return _pairingStatusFromJson($self->post('pairings/create', $params));
 }
