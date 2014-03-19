@@ -1,4 +1,4 @@
-Toopher-RADIUS version 1.3
+Toopher-RADIUS version 1.4
 ======================================
 
 Toopher uses the popular open-source [FreeRadius server](http://freeradius.org/) as the base for its RADIUS solution.
@@ -176,6 +176,8 @@ Please do not hesitate to contact [support@toopher.com](mailto:support@toopher.c
 
 Changelog
 ---------
+v1.4
+* Add support for self-service pairing reset
 
 v1.3
 

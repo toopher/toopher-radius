@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <Product Id="66523800-F8C4-127C-9372-1DA8BD582FB7" 
+  <Product Id="97E8B100-26A0-127D-9FD5-1B3C0CD43FB3" 
       Name="Toopher FreeRADIUS Server" 
-      Language="1033" Version="1.3" 
+      Language="1033" Version="1.4" 
       Manufacturer="Toopher, Inc" 
       UpgradeCode="2651E174-96CB-4B5F-AAE7-A53B2D79F041">
     <Package Description="Test file in a Product" Comments="Simple test" InstallerVersion="200" Compressed="yes" />
