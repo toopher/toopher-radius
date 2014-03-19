@@ -8,8 +8,9 @@ VENDOR		TOOPHER				41418
 
 BEGIN-VENDOR	TOOPHER
 
-ATTRIBUTE	Toopher-Pairing-Id	 	  10	string
-ATTRIBUTE	Toopher-Terminal-Name		11	string
-ATTRIBUTE Toopher-Terminal-Id     12  string
+ATTRIBUTE	Toopher-Pairing-Id	10	string
+ATTRIBUTE	Toopher-Terminal-Name	11	string
+ATTRIBUTE	Toopher-Terminal-Id	12	string
+ATTRIBUTE	Toopher-Reset-Email	13	string
 
 END-VENDOR	TOOPHER

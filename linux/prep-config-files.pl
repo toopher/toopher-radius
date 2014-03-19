@@ -4,8 +4,11 @@ use Data::Dumper;
 use Try::Tiny;
 use File::Copy "cp";
 
-my @TEMPLATED_FILES = ("modules/files", "modules/ldap", "modules/perl", "sites-available/default", "toopher_radius_config.pm", "toopher_radius.pl", "toopher_users", "dictionary.toopher", "ToopherAPI.pm");
+my @TEMPLATED_FILES = ("modules/files", "modules/ldap", "modules/perl", "sites-available/default", "toopher_radius_config.pm", "toopher_radius.pl", "toopher_users", "dictionary.toopher", "ToopherAPI.pm", "ldap.attrmap");
 my @COPY_IF_MISSING = ("clients.conf");
+my $ldapAttrConfigVariableMap = {
+  'Toopher-Reset-Email' => 'RESET_EMAIL_LDAP_ATTRIBUTE'
+};
 my $outputDir;
 my $inputDir;
 my $raddb;
@@ -80,6 +83,22 @@ sub parse_module_conf
   return $confNode;
 }
 
+sub get_ldap_attrmap
+{
+  my ($fName) = @_;
+  open(my $fh, "<", $fName) or return;
+  while(my $line = <$fh>) {
+    # strip leading and trailing whitespace
+    $line =~ s/^\s+//;
+    chomp $line;
+    my ($type, $radAttr, $ldapAttrName) = split /\s+/, $line;
+    if ($ldapAttrConfigVariableMap->{$radAttr}) {
+      my $configVar = $ldapAttrConfigVariableMap->{$radAttr};
+      $toopherConfiguration->{$configVar} = $ldapAttrName;
+    }
+  }
+  close $fh;
+}
 sub extract_users_file_entries
 {
   my ($fName) = @_;
@@ -160,6 +179,7 @@ sub fromVersion1
   }
 
   $toopherConfiguration->{'EXISTING_USERS_FILE_ENTRIES'} = extract_users_file_entries("$raddb/toopher_users");
+  get_ldap_attrmap("$raddb/ldap.attrmap");
 }
 
 sub getInstalledVersion
