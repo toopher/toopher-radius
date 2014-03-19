@@ -1,6 +1,9 @@
 authorize {
   preprocess
   check_toopher_users_file
+
+  # ldap must be in the authorize section to do attribute translation defined in ldap.attrmap
+  ldap
 }
 
 
