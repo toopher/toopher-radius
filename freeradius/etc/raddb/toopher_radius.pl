@@ -222,7 +222,7 @@ sub handle_pairing_reset_request
   my $resetEmail = $RAD_CHECK{'Toopher-Reset-Email'};
   try {
     my $result = $api->send_pairing_reset_email($username, $resetEmail);
-    my $resultText = $config->{'prompts'}{'reset_link_set'};
+    my $resultText = $config->{'prompts'}{'reset_link_sent'};
     $resultText =~ s/\%email\%/$resetEmail/;
     return fail($resultText);
   } catch {

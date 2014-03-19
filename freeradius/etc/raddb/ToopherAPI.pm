@@ -147,20 +147,21 @@ sub deactivate_pairings_for_username
 
 sub send_pairing_reset_email
 {
-  my ($self, $user_name, $email) = $_;
+  my ($self, $user_name, $email) = @_;
+  $_log->("send_pairing_reset_email: user = $user_name, email = $email");
   my @pairings = @{$self->_get_user_pairings_by_username($user_name)};
   my $params = {
     'reset_email' => $email,
   };
   foreach my $pairing (@pairings) {
     $_log->("  Sending pairing reset link for pairing ID=" . $pairing->{'id'});
-    $self->_post('pairings/' . $pairing->{'id'} . '/send_reset_link', $params);
+    $self->post('pairings/' . $pairing->{'id'} . '/send_reset_link', $params);
   }
 }
 
 sub _get_user_pairings_by_username
 {
-  my ($self, $user_name) = $@;
+  my ($self, $user_name) = @_;
   my $params = {
     'name' => $user_name,
   };
@@ -177,7 +178,7 @@ sub _get_user_pairings_by_username
 sub _get_user_pairings
 {
   my ($self, $user_obj) = @_;
-  my @all_pairings = $self->get('users/' . $user_obj->{'id'} . '/pairings');
+  my @all_pairings = @{$self->get('users/' . $user_obj->{'id'} . '/pairings')};
   my @result = ();
   foreach my $pairing (@all_pairings) {
     if ($pairing->{'enabled'} && !($pairing->{'deactivated'})){
