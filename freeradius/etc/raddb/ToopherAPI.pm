@@ -135,31 +135,56 @@ sub set_toopher_enabled_for_user
 sub deactivate_pairings_for_username
 {
   my ($self, $user_name) = @_;
+  my @pairings = @{$self->_get_user_pairings_by_username($user_name)};
+  foreach my $pairing (@pairings) {
+    my $params = {
+      'deactivated' => 'True',
+    };
+    $_log->("  Deactivating pairing ID=" . $pairing->{'id'});
+    $self->_update_pairing($pairing, $params);
+  }
+}
+
+sub send_pairing_reset_email
+{
+  my ($self, $user_name, $email) = $_;
+  my @pairings = @{$self->_get_user_pairings_by_username($user_name)};
+  my $params = {
+    'reset_email' => $email,
+  };
+  foreach my $pairing (@pairings) {
+    $_log->("  Sending pairing reset link for pairing ID=" . $pairing->{'id'});
+    $self->_post('pairings/' . $pairing->{'id'} . '/send_reset_link', $params);
+  }
+}
+
+sub _get_user_pairings_by_username
+{
+  my ($self, $user_name) = $@;
   my $params = {
     'name' => $user_name,
   };
-
   my @users = @{$self->get('users', $params)};
-
+  my @result = ();
   foreach my $user_obj (@users) {
     my @pairings = @{$self->_get_user_pairings($user_obj)};
     foreach my $pairing (@pairings) {
-      if ($pairing->{'enabled'} && !($pairing->{'deactivated'})){
-        $params = {
-	  'deactivated' => 'True',
-	};
-	$_log->("  Deactivating pairing ID=" . $pairing->{'id'});
-	$self->_update_pairing($pairing, $params);
-      }
+      push @result, $pairing;
     }
   }
-
+  return \@result;
 }
-
 sub _get_user_pairings
 {
   my ($self, $user_obj) = @_;
-  return $self->get('users/' . $user_obj->{'id'} . '/pairings');
+  my @all_pairings = $self->get('users/' . $user_obj->{'id'} . '/pairings');
+  my @result = ();
+  foreach my $pairing (@all_pairings) {
+    if ($pairing->{'enabled'} && !($pairing->{'deactivated'})){
+      push @result, $pairing;
+    }
+  }
+  return \@result;
 }
 
 sub _update_pairing

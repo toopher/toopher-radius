@@ -215,23 +215,42 @@ sub handle_pairing_challenge_reply
   };
 }
 
+sub handle_pairing_reset_request
+{
+  _log('handle_pairing_reset_request');
+  my $username = $RAD_REQUEST{'User-Name'};
+  my $resetEmail = $RAD_CHECK{'Toopher-Reset-Email'};
+  try {
+    my $result = $api->send_pairing_reset_email($username, $resetEmail);
+    my $resultText = $config->{'prompts'}{'reset_link_set'};
+    $resultText =~ s/\%email\%/$resetEmail/;
+    return fail($resultText);
+  } catch {
+    _log('Error while sending reset email: ' . $_);
+    return fail('Failed to send Toopher Pairing Reset Email.  Please contact your administrator.');
+  }
+}
 sub handle_otp_challenge_reply
 {
   _log('handle_otp_challenge_reply');
   my $username = $RAD_REQUEST{'User-Name'};
   my $otp = $RAD_REQUEST{'User-Password'};
-  try {
-    my $auth = $api->authenticate_by_user_name($username, '', '', { otp => $otp });
-    if ($auth->granted) {
-      return RLM_MODULE_OK;
-    } else {
-      $RAD_REPLY{'Reply-Message'} = $auth->reason;
-      _log(Dumper($auth));
-      return RLM_MODULE_REJECT;
+  if ($otp =~ /^reset$/i) {
+    return &handle_pairing_reset_request();
+  } else {
+    try {
+      my $auth = $api->authenticate_by_user_name($username, '', '', { otp => $otp });
+      if ($auth->granted) {
+        return RLM_MODULE_OK;
+      } else {
+        $RAD_REPLY{'Reply-Message'} = $auth->reason;
+        _log(Dumper($auth));
+        return RLM_MODULE_REJECT;
+      }
+    } catch {
+      _log('Error while submitting OTP: ' . $_);
+      return fail('Failed to authenticate with the Toopher API');
     }
-  } catch {
-    _log('Error while submitting OTP: ' . $_);
-    return fail('Failed to authenticate with the Toopher API');
   }
 }
 
