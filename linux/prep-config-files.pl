@@ -178,6 +178,17 @@ sub fromVersion1
       update($toopherConfiguration, 'LDAP_GROUP_MEMBERSHIP_FILTER', $ldapConf, 'groupmembership_filter');
   }
 
+  if ( -e $raddb . '/sites-enabled/default') {
+    open my $fh, "<", $raddb . '/sites-enabled/default' or die "Could not open sites-enabled/default: $!\n";
+    my @siteConfLines = <$fh>;
+    close $fh;
+    foreach my $line (@siteConfLines) {
+      if ($line =~ /Ldap-Group\s+==\s+(.*?)\s*\)\s*\}\s*$/) {
+        $toopherConfiguration->{'TOOPHER_LDAP_GROUP'} = $1;
+      }
+    }
+  }
+
   $toopherConfiguration->{'EXISTING_USERS_FILE_ENTRIES'} = extract_users_file_entries("$raddb/toopher_users");
   get_ldap_attrmap("$raddb/ldap.attrmap");
 }
