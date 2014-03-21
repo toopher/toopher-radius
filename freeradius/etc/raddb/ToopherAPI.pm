@@ -271,27 +271,41 @@ sub post
 sub request
 {
   my ($self, $req,  $params) = @_;
-  my $oaRequest = Net::OAuth::ConsumerRequest->new(
-    consumer_key => $self->{_key},
-    consumer_secret => $self->{_secret},
-    request_url => $req->uri,
-    request_method => $req->method,
-    timestamp => time,
-    nonce => substr ((rand() . ""), 2),
-    signature_method => 'HMAC-SHA1',
-    extra_params => $params,
-  );
-  $oaRequest->sign;
-
-  $req->header('Authorization' => $oaRequest->to_authorization_header);
-  $req->header('User-Agent' => "toopher-perl/" . VERSION . " (perl " . $] . " on " . $^O . ")");
   
-  my $response = $self->{_ua}->request($req);
+  my $tries = 0;
+  my $success = 0;
+  
+  my $response;
+  while (($success == 0) && ($tries < 3)) {
+    $tries = $tries + 1;
+    my $oaRequest = Net::OAuth::ConsumerRequest->new(
+        consumer_key => $self->{_key},
+        consumer_secret => $self->{_secret},
+        request_url => $req->uri,
+        request_method => $req->method,
+        timestamp => time,
+        nonce => substr ((rand() . ""), 2),
+        signature_method => 'HMAC-SHA1',
+        extra_params => $params,
+    );
+    $oaRequest->sign;
+    $_log->("Oauth authorization: " . $oaRequest->to_authorization_header);
+    $req->header('Authorization' => $oaRequest->to_authorization_header);
+    $req->header('User-Agent' => "toopher-perl/" . VERSION . " (perl " . $] . " on " . $^O . ")");
 
+    $response = $self->{_ua}->request($req);
+
+    if ($response->code == 401) {
+      $_log->("  OAuth error.  Attempting to re-seed the RNG");
+      srand();
+    } else {
+      $success = 1;
+    }
+
+  }
   if ($response->code >= 300) {
     _parse_request_error($response);
   }
-
   my $jsonObj;
   eval {
     $jsonObj = decode_json($response->content);
