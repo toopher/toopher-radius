@@ -183,7 +183,7 @@ sub fromVersion1
     my @siteConfLines = <$fh>;
     close $fh;
     foreach my $line (@siteConfLines) {
-      if ($line =~ /Ldap-Group\s+==\s+(.*?)\s*\)\s*\}\s*$/) {
+      if ($line =~ /Ldap-Group\s+==\s+(.*?)\s*\)\s*\{\s*$/) {
         $toopherConfiguration->{'TOOPHER_LDAP_GROUP'} = $1;
       }
     }
@@ -297,6 +297,11 @@ print "Expanding config file templates...\n";
 foreach my $file (@TEMPLATED_FILES) {
   print "  $file\n";
   expand_templates("$inputDir/$file", "$outputDir/$file");
+}
+
+if ($^O =~ /MSWin|cygwin/) {
+  print "WINDOWS ONLY: copying sites-available/default to sites-enabled/default\n";
+  cp("$outputDir/sites-available/default", "outputDir/sites-enabled/default");
 }
 
 foreach my $file (@COPY_IF_MISSING) {
