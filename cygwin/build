@@ -154,13 +154,10 @@ cp ../linux/prep-config-files.pl ${FREERAD_BUILD}
 
 echo 
 
-echo get rid of the inner-tunnel and control-socket sites
-unlink ${FREERAD_BUILD}/etc/raddb/sites-enabled/inner-tunnel
-unlink ${FREERAD_BUILD}/etc/raddb/sites-enabled/control-socket
-
-echo make sites-enabled/default a hard copy, because windows sucks at symlinks
-unlink ${FREERAD_BUILD}/etc/raddb/sites-enabled/default
-cp ${FREERAD_BUILD}/toopher/etc/raddb/sites-available/default ${FREERAD_BUILD}/etc/raddb/sites-enabled/default
+echo get rid of sites-available/default - will come from templated version
+rm ${FREERAD_BUILD}/etc/raddb/sites-available/*
+echo get rid of everything in sites-enabled - will be copied by config script
+rm ${FREERAD_BUILD}/etc/raddb/sites-enabled/*
 
 echo moving root dictionary to /etc/raddb/dictionary
 cp ${FREERAD}/share/dictionary ${FREERAD_BUILD}/etc/raddb/dictionary
