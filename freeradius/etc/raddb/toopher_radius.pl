@@ -125,7 +125,6 @@ sub poll_for_auth {
 
 sub pair_with_toopher {
   my ($pairingPhrase, $userName) = @_;
-
   my $pairing;
   try {
     $pairing = $api->pair($pairingPhrase, $userName);
@@ -134,7 +133,7 @@ sub pair_with_toopher {
   };
   my $start_time = time();
 
-  while(!$pairing->enabled){
+  while($pairing->pending){
     sleep(1);
     try {
       $pairing = $api->get_pairing_status($pairing->id);
@@ -146,10 +145,9 @@ sub pair_with_toopher {
     };
   }
   if($pairing->enabled){
-    return $pairing->id;
+    return RLM_MODULE_OK;
   } else {
-    $RAD_REPLY{'Reply-Message'} = "Pairing was not completed on mobile device";
-    return RLM_MODULE_REJECT;
+    return &fail("Pairing was not completed on mobile device");
   }
 }
 
@@ -176,7 +174,7 @@ sub authenticate_zrs {
     $terminal_identifier = &get_terminal_identifier;
   }
   try {
-    return poll_for_auth($api->authenticate_by_user_name($username, $terminal_identifier));
+    return &poll_for_auth($api->authenticate_by_user_name($username, $terminal_identifier));
   } catch {
     chomp();
     _log('Caught error on request: ' . $_);
@@ -190,7 +188,7 @@ sub authenticate_zrs {
       return &issue_pairing_challenge_prompt();
     } else {
       _log('unknown error: ' . $_);
-      fail('Unknown error while authenticating: ' . $_);
+      return &fail('Unknown error while authenticating: ' . $_);
     }
   };    
 }
@@ -208,10 +206,9 @@ sub handle_pairing_challenge_reply
   my $username = $RAD_REQUEST{'User-Name'};
   my $pairing_phrase = $RAD_REQUEST{'User-Password'};
   try {
-    &pair_with_toopher($pairing_phrase, $username);
-    return RLM_MODULE_OK;
+    return &pair_with_toopher($pairing_phrase, $username);
   } catch {
-    return fail('Error while pairing with ToopherAPI: ' . $_);
+    return &fail('Error while pairing with ToopherAPI: ' . $_);
   };
 }
 
@@ -224,10 +221,10 @@ sub handle_pairing_reset_request
     my $result = $api->send_pairing_reset_email($username, $resetEmail);
     my $resultText = $config->{'prompts'}{'reset_link_sent'};
     $resultText =~ s/\%email\%/$resetEmail/;
-    return fail($resultText);
+    return &fail($resultText);
   } catch {
     _log('Error while sending reset email: ' . $_);
-    return fail('Failed to send Toopher Pairing Reset Email.  Please contact your administrator.');
+    return &fail('Failed to send Toopher Pairing Reset Email.  Please contact your administrator.');
   }
 }
 sub handle_otp_challenge_reply
