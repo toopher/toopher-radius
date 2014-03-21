@@ -294,6 +294,12 @@ if ($prompt) {
 }
 
 print "Expanding config file templates...\n";
+if (! -d "$outputDir/sites-available") {
+  mkdir("$outputDir/sites-available");
+}
+if (! -d "$outputDir/sites-enabled") {
+  mkdir("$outputDir/sites-enabled");
+}
 foreach my $file (@TEMPLATED_FILES) {
   print "  $file\n";
   expand_templates("$inputDir/$file", "$outputDir/$file");
@@ -301,7 +307,7 @@ foreach my $file (@TEMPLATED_FILES) {
 
 if ($^O =~ /MSWin|cygwin/) {
   print "WINDOWS ONLY: copying sites-available/default to sites-enabled/default\n";
-  cp("$outputDir/sites-available/default", "outputDir/sites-enabled/default");
+  cp("$outputDir/sites-available/default", "$outputDir/sites-enabled/default");
 }
 
 foreach my $file (@COPY_IF_MISSING) {
