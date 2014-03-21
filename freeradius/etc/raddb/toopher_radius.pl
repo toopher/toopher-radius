@@ -85,7 +85,7 @@ sub issue_pairing_challenge_prompt {
 
 sub issue_otp_challenge_prompt {
   $RAD_REPLY{'State'} = CHALLENGE_STATE_OTP;
-  $RAD_REPLY{'Reply-Message'} = $config->{'prompts'}{'otp_challenge'};
+  $RAD_REPLY{'Reply-Message'} = $config->{'prompts'}{'otp_challenge'} . " " . $config->{'prompts'}{'self_reset'};
   $RAD_CHECK{'Response-Packet-Type'} = 'Access-Challenge';
   return RLM_MODULE_HANDLED;
 }
