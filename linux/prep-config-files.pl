@@ -283,12 +283,12 @@ if ($prompt) {
     if (exists $noprompt{$key}) {
       next;
     } else {
-    print '  ' . $key . ' [' . $toopherConfiguration->{$key} . '] : ';
-    my $response = <STDIN>;
-    chomp ($response);
-    if ($response) {
-      $toopherConfiguration->{$key} = $response;
-    }
+      print '  ' . $key . ' [' . $toopherConfiguration->{$key} . '] : ';
+      my $response = <STDIN>;
+      chomp ($response);
+      if ($response) {
+        $toopherConfiguration->{$key} = $response;
+      }
     }
   }
 }
