@@ -38,12 +38,30 @@ ldap {
 	#  Note that this needs to match the name in the LDAP
 	#  server certificate, if you're using ldaps.
 	server = "{{LDAP_HOST}}"
+	port = {{LDAP_PORT}}
+
+        # DN and password for the account with permission to search for users in LDAP
 	identity = "{{LDAP_IDENTITY}}"
 	password = {{LDAP_PASSWORD}}
+
+        # search base and filter used to find users
 	basedn = "{{LDAP_BASEDN}}"
 	filter = "{{LDAP_SEARCH_FILTER}}"
-	# filter = "(|(uid=%{%{Stripped-User-Name}:-%{User-Name}})"
-	#base_filter = "(objectclass=radiusprofile)"
+	
+	#
+	#  Group membership checking.  Disabled by default.
+	#
+	groupname_attribute = cn
+	groupmembership_filter = "{{LDAP_GROUP_MEMBERSHIP_FILTER}}"
+
+	#  ldap_debug: debug flag for LDAP SDK
+	#  (see OpenLDAP documentation).  Set this to enable
+	#  huge amounts of LDAP debugging on the screen.
+	#  You should only use this if you are an LDAP expert.
+	#
+	#	default: 0x0000 (no debugging messages)
+	#	Example:(LDAP_DEBUG_FILTER+LDAP_DEBUG_CONNS)
+	ldap_debug = 0x0000 
 
 	#  How many connections to keep open to the LDAP server.
 	#  This saves time over opening a new LDAP socket for
@@ -55,11 +73,6 @@ ldap {
 	#  like load balancers, which may exhibit sticky
 	#  behaviour without it. (0) is unlimited.
 	max_uses = 0
-
-	#  Port to connect on, defaults to 389. Setting this to
-	#  636 will enable LDAPS if start_tls (see below) is not
-	#  able to be used.
-	port = {{LDAP_PORT}}
 
 	# seconds to wait for LDAP query to finish. default: 20
 	timeout = 4
@@ -141,11 +154,6 @@ ldap {
 	#
 	edir_account_policy_check = no
 
-	#
-	#  Group membership checking.  Disabled by default.
-	#
-	groupname_attribute = cn
-	groupmembership_filter = "{{LDAP_GROUP_MEMBERSHIP_FILTER}}"
 	# groupmembership_attribute = radiusGroupName
 
 	# compare_check_items = yes
@@ -177,14 +185,6 @@ ldap {
 	#  allowed values: {no, yes}
 	# set_auth_type = yes
 
-	#  ldap_debug: debug flag for LDAP SDK
-	#  (see OpenLDAP documentation).  Set this to enable
-	#  huge amounts of LDAP debugging on the screen.
-	#  You should only use this if you are an LDAP expert.
-	#
-	#	default: 0x0000 (no debugging messages)
-	#	Example:(LDAP_DEBUG_FILTER+LDAP_DEBUG_CONNS)
-	ldap_debug = 0x0028 
 
 	#
 	#  Keepalive configuration.  This MAY NOT be supported by your
