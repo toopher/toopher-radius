@@ -14,25 +14,9 @@ and is the recommended deployment method. </p>
 <p>On the LDAP server, create a group called <code>ToopherUsers</code></p>
 <p>In addition, if your LDAP server is not configured to allow anonymous search, you should create a user LDAP account that has <code>search</code> permission for the <code>sAMAccountName</code> attribute (if using Active Directory), or <code>uid</code> (for most other LDAP schemas).</p>
 <h2>Installing the RADIUS Server</h2>
-<h3>Installing on CentOS / RHEL</h3>
-<p>The included <code>install-centos.sh</code> script takes care of the full installation process:</p>
-<pre><code>cd linux &amp;&amp; sudo ./install-centos.sh
-</code></pre>
-<h3>Installing on Ubuntu (or other debian-based distro)</h3>
-<p>ensure that the OS is updated, the <code>build-essential</code> package is installed, and <code>CPAN</code> in up-to-date:</p>
-<pre><code>sudo apt-get update
-sudo apt-get upgrade
-sudo apt-get install build-essential
-sudo cpan CPAN
-</code></pre>
-<p>run the provided install-ubuntu.sh script as root:</p>
-<pre><code>cd linux &amp;&amp; sudo ./install-ubuntu.sh
-</code></pre>
-<p>If the installation script stalls on a CPAN step, you may need to update the CPAN mirror list in the cpan shell:</p>
-<pre><code>sudo cpan
-cpan&gt; o conf init urllist
-cpan&gt; o conf commit
-cpan&gt; exit
+<h3>Installing on CentOS / RHEL / Ubuntu</h3>
+<p>The included <code>install.sh</code> script takes care of the full installation/upgrade process:</p>
+<pre><code>cd linux &amp;&amp; sudo ./install.sh
 </code></pre>
 <p>Ubuntu installs the FreeRADIUS configuration files to <code>/etc/freeradius</code> instead of <code>/etc/raddb</code>.  Where this document references files under <code>/etc/raddb</code>, please edit the corresponding file under <code>/etc/freeradius</code>.</p>
 <h3>Installing on Windows</h3>

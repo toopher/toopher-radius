@@ -26,29 +26,10 @@ In addition, if your LDAP server is not configured to allow anonymous search, yo
 
 Installing the RADIUS Server
 -----------------------------
-### Installing on CentOS / RHEL
-The included `install-centos.sh` script takes care of the full installation process:
+### Installing on CentOS / RHEL / Ubuntu
+The included `install.sh` script takes care of the full installation/upgrade process:
 
-    cd linux && sudo ./install-centos.sh
-
-### Installing on Ubuntu (or other debian-based distro)
-ensure that the OS is updated, the `build-essential` package is installed, and `CPAN` in up-to-date:
-
-    sudo apt-get update
-    sudo apt-get upgrade
-    sudo apt-get install build-essential
-    sudo cpan CPAN
-
-run the provided install-ubuntu.sh script as root:
-
-    cd linux && sudo ./install-ubuntu.sh
-
-If the installation script stalls on a CPAN step, you may need to update the CPAN mirror list in the cpan shell:
-
-    sudo cpan
-    cpan> o conf init urllist
-    cpan> o conf commit
-    cpan> exit
+    cd linux && sudo ./install.sh
 
 Ubuntu installs the FreeRADIUS configuration files to `/etc/freeradius` instead of `/etc/raddb`.  Where this document references files under `/etc/raddb`, please edit the corresponding file under `/etc/freeradius`.
 
