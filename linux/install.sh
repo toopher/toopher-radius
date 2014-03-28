@@ -69,10 +69,10 @@ do
   ./cpanm $module 2>&1
 done
 
-CONFIG_FILES=( ToopherAPI.pm toopher_users dictionary.toopher toopher_radius.pl toopher_radius_config.pm modules/files modules/perl modules/ldap sites-available/default ldap.attrmap )
+CONFIG_FILES=( clients.conf ToopherAPI.pm toopher_users dictionary.toopher toopher_radius.pl toopher_radius_config.pm modules/files modules/perl modules/ldap sites-available/default ldap.attrmap )
 
 if [ -e $RADDB_DIR/toopher_radius_config.pm ]; then
-  echo backing up existing configuration to $TEMP_DIR/oldconfig.tgz
+  cp $RADDB_DIR/clients.conf $TEMP_DIR/raddb/clients.conf
   perl prep-config-files.pl $TEMP_DIR/raddb ../freeradius/etc/raddb $RADDB_DIR
 else
   perl prep-config-files.pl $TEMP_DIR/raddb ../freeradius/etc/raddb
