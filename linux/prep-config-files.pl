@@ -238,6 +238,10 @@ sub expand_templates
           die "Error: no template substitution value for $configItemName\n"
         }
         my $expandedVal = $toopherConfiguration->{$configItemName};
+        # remove extra quotes on $expandedVal - if quotes are needed, they should be in the template
+        while ($expandedVal =~ /^"(.+)"$/) {
+          $expandedVal = $1;
+        }
         $line =~ s/\{\{.*?\}\}/$expandedVal/;
       }
       print $oh $line;

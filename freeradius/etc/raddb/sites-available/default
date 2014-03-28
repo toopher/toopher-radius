@@ -19,7 +19,7 @@ authenticate {
     else {
       # normal (init) state - check password in ldap, then do toopher auth
       ldap
-      if ( Ldap-Group == {{TOOPHER_LDAP_GROUP}} ) {
+      if ( Ldap-Group == "{{TOOPHER_LDAP_GROUP}}" ) {
         # Ldap-Group is a "magic" attribute defined by rlm_ldap
         do_toopher_auth
       }
