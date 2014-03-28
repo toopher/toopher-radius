@@ -197,7 +197,12 @@ Please do not hesitate to contact [support@toopher.com](mailto:support@toopher.c
 
 Changelog
 ---------
+v1.4.1
+
+* Standardize use of "" characters in configuration files
+
 v1.4
+
 * Add support for self-service pairing reset
 
 v1.3
