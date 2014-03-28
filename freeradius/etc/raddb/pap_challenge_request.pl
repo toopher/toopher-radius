@@ -15,9 +15,12 @@ use IO::Socket::INET;
 
 use constant RADIUS_HOST => '127.0.0.1';
 use constant RADIUS_SECRET => 'testing123';
-use constant RADIUS_TIMEOUT => 60;
+use constant RADIUS_TIMEOUT => 70;
 use constant CALLING_STATION_ID => 'detect';
 use constant RADDB => '/etc/raddb';
+
+# autoflush stdout
+$| = 1;
 
 sub get_local_ip_address {
   my $socket = IO::Socket::INET->new(
@@ -78,7 +81,8 @@ $r->add_attributes (
     { Name => 'Calling-Station-Id', Value => $calling_station_id },
 );
 
-$r->set_timeout(time() + 60);
+$r->set_timeout(time() + RADIUS_TIMEOUT);
+print "sending RADIUS request\n";
 $r->send_packet(ACCESS_REQUEST)  || die;
 my $type = $r->recv_packet() || die($r->get_error());
 
@@ -121,6 +125,8 @@ while($type == ACCESS_CHALLENGE){
   print "server response type = $response_codes{$type} ($type)\n";
 }
 
-
+for $a ($r->get_attributes()) {
+  print $a->{Name} . ' -> ' . $a->{RawValue} . "\n";
+}
 
 exit 1 unless $type == 2;
