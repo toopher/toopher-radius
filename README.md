@@ -177,6 +177,19 @@ In some cases, a user may require administrator assistance to recover a lost pai
 * Remove the user from the `ToopherUsers` LDAP group - This will preserve the Pairing informaion in the Toopher API server, while allowing the user to bypass Toopher authentication to log in.  This method can be effectively undone by adding the user back to the `ToopherUsers` group.
 * Reset the user's pairing - Administrators can reset a user's pairing information by running `perl /etc/freeradius/toopher_radius.pl reset-pairing [username]` on the Toopher-RADIUS server.  This command will remove that user's pairing information from the Toopher API, and they will be prompted to re-pair the next time they authenticate.  Windows users can access this tool through the Start menu (Toopher -> Toopher-RADIUS Server -> Reset User Pairing)
 
+Troubleshooting
+---------------------
+
+## SELinux Issues
+
+* Symptom: RADIUS returns error messages like `Unknown error while authenticating: 500 Can't connect to toopher-api.appspot.com:443` when run as a service, but not when run in debug mode.
+* Possible Cause: The SELinux default `radius` module settings does not permit the server to access the Toopher API to complete authentication
+* Fix: Create a `toopher_radius` policy module to allow the blocked connection attempts:
+
+    grep radiusd /var/log/audit/audit.log | audit2allow -M toopher_radius
+    semodule -i toopher_radius.pp
+
+
 
 Support Information
 ---------------------
