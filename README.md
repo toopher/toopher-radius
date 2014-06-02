@@ -178,6 +178,10 @@ Please do not hesitate to contact [support@toopher.com](mailto:support@toopher.c
 
 Changelog
 ---------
+v1.4.2
+
+* Rebuild .deb packages with updated Ubuntu dependencies
+
 v1.4.1
 
 * Standardize use of "" characters in configuration files
