@@ -1,4 +1,4 @@
-Toopher-RADIUS version 1.4
+Toopher-RADIUS version 1.5
 ======================================
 
 Toopher uses the popular open-source [FreeRadius server](http://freeradius.org/) as the base for its RADIUS solution.
@@ -13,15 +13,16 @@ Installation Requirements
 Installing and Configuring the Toopher RADIUS server
 ======================================================
 
-Set Up LDAP Integration
------------------------
-Integrating Toopher into your organization's LDAP schema provides a simple way to administer per-user Toopher settings,
-and is the recommended deployment method. 
+Toopher-RADIUS can be configured to run in either **Full-Authentication** or **Toopher-Only** mode.
 
-### Prepare the Active Directory / LDAP Server for Toopher Administration
-On the LDAP server, create a group called `ToopherUsers`
+ * **Full-Authentication:** The Toopher-RADIUS server is responsible for authenticating the user's username/password credentials, as well as performing second-factor authentication using the Toopher API.  Full-Authentication affords maximum compatibility with various VPN gateway devices, but requires that the Toopher-RADIUS server be configured to access to your organization's LDAP database.
+ * **Toopher-Only:** Users have already passed username/password authentication before a request is made to the Toopher-RADIUS server.  Toopher-Only mode reduces the number of times a user's password must be sent over the network, and may simplify firewall configuration because the Toopher-RADIUS server does not need to contact your organization's LDAP infrastructure.  However, not all VPN devices are able to be configured to support the Toopher-RADIUS server in Toopher-ONLY mode.
 
-In addition, if your LDAP server is not configured to allow anonymous search, you should create a user LDAP account that has `search` permission for the `sAMAccountName` attribute (if using Active Directory), or `uid` (for most other LDAP schemas).
+If your VPN gateway device supports chaining multiple authentication methods, **Toopher-Only** is usually the prefered configuration for the Toopher-RADIUS server.
+
+ * If using **Full-Authentication** mode: Prepare the Active Directory / LDAP Server for Toopher Administration
+  * On the LDAP server, create a group called `ToopherUsers`
+  * if your LDAP server is not configured to allow anonymous search, you should create a user LDAP account that has `search` permission for the `sAMAccountName` attribute (if using Active Directory), or `uid` (for most other LDAP schemas).
 
 
 Installing the RADIUS Server
@@ -36,12 +37,11 @@ Ubuntu installs the FreeRADIUS configuration files to `/etc/freeradius` instead 
 ### Installing on Windows
 The included MSI package will install the Toopher-RADIUS server for windows, along with necessary configuration tools.
 
-RADIUS Configuration
+RADIUS Configuration - Linux
 --------------------
-### Linux Configuration
-Add the IP address of your VPN solution to /etc/raddb/clients.conf.  This will vary according to your network environment.  As an example, to add a VPN client named `PA_VM` accessiable at local IP address of `172.16.42.201` with RADIUS secret `s3cr3t`, add the following four lines to `clients.conf`: 
+Add the IP address of your VPN solution to /etc/raddb/clients.conf.  This will vary according to your network environment.  As an example, to add a VPN client named `MY_VPN_BOX` accessible at local IP address of `172.16.42.201` with RADIUS secret `s3cr3t`, add the following four lines to `clients.conf`: 
 
-    client PA_VM {
+    client MY_VPN_BOX {
          ipaddr = 172.16.42.201
          secret = s3cr3t
     }
@@ -70,7 +70,15 @@ At a minimum, you must change the "key" and "secret" values in the
 toopher_api section.  You can generate new requester credentials at the 
 [Toopher Developer Site](https://dev.toopher.com).
 
-Additionally, edit /etc/raddb/modules/ldap to point to your LDAP / Active Directory server
+***
+**Toopher-Only** mode: edit /etc/raddb/toopher_users, and add the following two lines at the bottom of the file (below the `# MAKE EDITS BELOW THIS LINE` marker.  Skip this step if using Full-Authentication mode
+
+    DEFAULT Auth-Type := TOOPHER_ONLY
+      Fall-Through = Yes
+
+***
+
+**Full-Authentication** mode: edit /etc/raddb/modules/ldap to point to your LDAP / Active Directory server.  Skip this step if using Toopher-Only mode
 
     conf
       ldap {
@@ -89,13 +97,14 @@ Additionally, edit /etc/raddb/modules/ldap to point to your LDAP / Active Direct
 Most users will only need to edit the `server`, `identity`, `password`, and `basedn` settings.  `identity` and `password` correspond to an LDAP account that is allowed `search`/`read` access to `User` objects.  If your LDAP server permits anonymous searches, you can comment out these two lines.
 
 The default filters should work for Active Directory, as well as any LDAP server using the [RFC 2798 (inetOrgPerson)](http://tools.ietf.org/html/rfc2798) schema.
+***
+
 
 Additionally, you may customize the prompt displayed to users when they initially pair their device with Toopher.  The maximum length of this prompt is 253 characters due to technical limitations of the RADIUS specification.
  
-### Windows Configuration
+RADIUS Configuration - Windows
+--------------------
 Windows Administrators can configure the most commonly-used parameters through the Start menu (Toopher -> Toopher-RADIUS Server -> Configuration)
-
-There are three general parameter categories in the Windows installation:
 
 Toopher API Settings:
 
@@ -107,6 +116,9 @@ RADIUS Prompt Text:
 
 * `PROMPT_PAIRING_CHALLENGE` : Text displayed to the user when they first pair a mobile device with their account.
 * `PROMPT_OTP_CHALLENGE` : Text displayed to the user when they need to validate with a One-Time Password (for instance, if their mobile device does not have internet access)
+
+***
+**Full-Authentication** mode settings - skip these items (accept the defaults in the configuration script) if using Toopher-Only mode.
 
 LDAP settings you will need to edit:
 
@@ -120,6 +132,12 @@ should work for ActiveDirectory and [inetOrgPerson](http://tools.ietf.org/html/r
 
 * `LDAP_GROUP_MEMBERSHIP_FILTER`
 * `LDAP_SEARCH_FILTER`
+***
+**Toopher-Only** mode: edit `C:\Program Files (x86)\Toopher\Toopher FreeRADIUS Server\etc\raddb\toopher_users`, and add the following two lines at the bottom of the file (below the `# MAKE EDITS BELOW THIS LINE` marker.  Skip this step if using Full-Authentication mode
+
+    DEFAULT Auth-Type := TOOPHER_ONLY
+      Fall-Through = Yes
+***
 
 
 Start the RADIUS server
@@ -137,6 +155,8 @@ Start the RADIUS server
 Configure your RADIUS-Compatible Gateway Device
 ----------------------------------------------------
 Follow vendor instructions for your RADIUS-Compatible VPN (or other gateway device) to connect it to the Toopher-RADIUS server.  In addition to entering the IP address and shared secret for the Toopher-RADIUS server, the RADIUS timeout will typically need to be increased well above the default.  This timeout should be set slightly higher than the `poll_timeout` setting configured in `toopher_radius_config.pm`, above.  While the Toopher-RADIUS server will authenticate most requests within a few seconds, requests which require the user to respond to a prompt on their device will take considerably longer.
+
+If you have configured your Toopher-RADIUS server to run in **Toopher-Only** mode, you must additionally configure your VPN device to perform primary username/password authentication.  Exact instructions will vary for different VPN vendors, but the goal is to create a custom Authentication Chain, where the VPN gateway only sends a request to the Toopher-RADIUS server after the username/password combination is determined valid.  If capabilities allow, you can also configure the VPN to check that the user is a member of the ToopherUsers group before sending the request to Toopher-RADIUS.
 
 Add Toopher Protection to Individual Users
 ------------------------------------------
@@ -156,7 +176,7 @@ Of course, if a user needs to reset their pairing, it likely means they do not h
 In some cases, a user may require administrator assistance to recover a lost pairing.  This most commonly happens if the user loses their mobile device, or uninstalls the Toopher app without first deleting their pairing.  There are two options for restoring access to the user:
 
 * Remove the user from the `ToopherUsers` LDAP group - This will preserve the Pairing informaion in the Toopher API server, while allowing the user to bypass Toopher authentication to log in.  This method can be effectively undone by adding the user back to the `ToopherUsers` group.
-* Reset the user's pairing - Administrators can reset a user's pairing information by running `perl /etc/freeradius/toopher_radius.pl reset-pairing [username]` on the Toopher-RADIUS server.  This command will remove that user's pairing information from the Toopher API, and they will be prompted to re-pair the next time they authenticate.  Windows users can access this tool through the Start menu (Toopher -> Toopher-RADIUS Server -> Reset User Pairing)
+* Reset the user's pairing - Administrators can reset a user's pairing information by running `perl /etc/freeradius/toopher_radius.pl reset-pairing [username]` on the Toopher-RADIUS server.  This command will remove that user's pairing information from the Toopher API, and they will be prompted to re-pair the next time they authenticate.  Windows administrators can access this tool through the Start menu (Toopher -> Toopher-RADIUS Server -> Reset User Pairing)
 
 Troubleshooting
 ---------------------
@@ -178,6 +198,10 @@ Please do not hesitate to contact [support@toopher.com](mailto:support@toopher.c
 
 Changelog
 ---------
+v1.5
+
+* Add support and documentation for Toopher-Only operational mode
+
 v1.4.2
 
 * Rebuild .deb packages with updated Ubuntu dependencies

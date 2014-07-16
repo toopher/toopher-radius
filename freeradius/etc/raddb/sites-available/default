@@ -39,6 +39,10 @@ authenticate {
     }
   }
 
+  auth_type TOOPHER_ONLY {
+    do_toopher_auth
+  }
+
   Auth-Type PAP {
     pap
   }

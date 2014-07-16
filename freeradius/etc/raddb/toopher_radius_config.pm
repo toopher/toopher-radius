@@ -11,7 +11,7 @@
 package toopher_radius_config;
 use strict;
 
-use constant VERSION => 1.4;
+use constant VERSION => 1.5;
 
 {
   my $toopher_config = 
