@@ -5,7 +5,9 @@ authorize {
   check_toopher_users_file
 
   # ldap must be in the authorize section to do attribute translation defined in ldap.attrmap
-  ldap
+  if (Auth-Type == TOOPHER_LDAP) {
+    ldap
+  }
 }
 
 
