@@ -179,7 +179,7 @@ cp -r installed_scripts/* ${FREERAD_BUILD}
 echo Copying cygwin dlls necessary to run in normal windows environment
 CYGWIN_DLLS=( cygwin1.dll cyggdbm-4.dll cyglber-2-4-2.dll cygldap-2-4-2.dll 
   cygldap_r-2-4-2.dll cygcrypto-1.0.0.dll cygz.dll 
-  cyggcc_s-1.dll cygsasl2-2.dll cygssl-1.0.0.dll
+  cyggcc_s-1.dll cygsasl2-2.dll cygsasl2-3.dll cygssl-1.0.0.dll
   cygcrypt-0.dll )
 for cyg_dll in "${CYGWIN_DLLS[@]}"
 do
