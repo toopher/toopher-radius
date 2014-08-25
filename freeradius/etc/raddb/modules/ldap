@@ -75,20 +75,20 @@ ldap {
 	max_uses = 0
 
 	# seconds to wait for LDAP query to finish. default: 20
-	timeout = 4
+	timeout = 20
 
 	#  seconds LDAP server has to process the query (server-side
 	#  time limit). default: 20
 	#
 	#  LDAP_OPT_TIMELIMIT is set to this value.
-	timelimit = 3
+	timelimit = 20
 
 	#
 	#  seconds to wait for response of the server. (network
 	#   failures) default: 10
 	#
 	#  LDAP_OPT_NETWORK_TIMEOUT is set to this value.
-	net_timeout = 1
+	net_timeout = 10
 
 	#
 	#  This subsection configures the tls related items
