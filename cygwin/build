@@ -115,6 +115,10 @@ sed -i "s/WITH_DHCP=yes/WITH_DHCP=no/g" ${FREERAD}/configure.in
 # patch the rlm_eap Makefile, because it's broken
 sed -i 's/= radeapclient/= radeapclient$(EXEEXT)/g' ${FREERAD}/src/modules/rlm_eap/Makefile.in
 
+# patch the LIBREADLINE def in Make.inc, because it's broken
+sed -i 's/LIBREADLINE	= -lreadline/LIBREADLINE	= -lreadline -lncurses/g' ${FREERAD}/Make.inc
+
+
 # build freeradius
 pushd ${FREERAD}
 
