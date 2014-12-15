@@ -444,6 +444,38 @@ if($ARGV[0] eq 'unittest'){
   } catch {
     die("Error while resetting user pairing: $_\n");
   };
+} elsif($ARGV[0] eq 'reset-terminal') {
+  my $user_name = $ARGV[1];
+  my $terminal_identifier = $ARGV[2];
+  if (not ($user_name and $terminal_identifier)) {
+    print "*****************************\n";
+    print "**  Toopher Terminal Reset  **\n";
+    print "*****************************\n";
+    print "\nUsername > ";
+    $user_name = <STDIN>;
+    chomp($user_name);
+    print "\nTerminal Identifier (IP) > ";
+    $terminal_identifier = <STDIN>;
+    chomp($terminal_identifier);
+  }
+  die ("Usage: $0 reset-terminal [username] [terminal identifier]\n") unless ($user_name and $terminal_identifier);
+  my $terminal_name_extra = sha256_base64($user_name . $terminal_identifier);
+  try {
+    instantiate_toopher_api();
+    my $auth_request = $api->authenticate_by_user_name($user_name, $terminal_name_extra);
+    my $terminal_id = $auth_request->terminal_id;
+    my $params = {
+      'name_extra' => '00000000',
+    };
+    $api->post('user_terminals/' . $terminal_id, $params);
+  } catch {
+    chomp();
+    if ($_ eq ToopherAPI::ERROR_TERMINAL_UNKNOWN) {
+      die("Error: no terminal found that matches the given terminal identifier\n");
+    } else {
+      die("Error while resetting user terminal: $_\n");
+    }
+  };
 } else {
   instantiate_toopher_api();
 }
