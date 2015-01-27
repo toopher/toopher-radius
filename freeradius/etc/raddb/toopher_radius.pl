@@ -476,6 +476,34 @@ if($ARGV[0] eq 'unittest'){
       die("Error while resetting user terminal: $_\n");
     }
   };
+} elsif ($ARGV[0] eq 'get-otps') {
+  my $user_name = $ARGV[1];
+  if (not $user_name) {
+    print "******************************\n";
+    print "**  Toopher OTP Generation  **\n";
+    print "******************************\n";
+    print "\nUsername to retrieve OTP > ";
+    $user_name = <STDIN>;
+    chomp($user_name);
+  }
+  die ("Usage: $0 get-otps [username]\n") unless $user_name;
+  try {
+    instantiate_toopher_api();
+    my $params = {
+      'user_name' => $user_name,
+    };
+    my $result = $api->post('users/activate_next_otp_list', $params);
+    print("\nGenerated One-Time Passwords for user $user_name:\n");
+    my $otp_counter = 1;
+    foreach my $otp (@{$result->{'otp_list'}}) {
+      print("\t$otp_counter:\t$otp\n");
+      $otp_counter++;
+    }
+    print("OK\n");
+  } catch {
+    die("Error while resetting user pairing: $_\n");
+  };
+
 } else {
   instantiate_toopher_api();
 }
