@@ -1468,9 +1468,6 @@
         <Component Id="cmp690A5FB64C20DDC74DFE39EC982456BD" Guid="{C48C75A9-CC84-4A81-A46F-F635244453FE}">
           <File Id="filAB0D6DAB15D0E11C60F987591BDAC095" KeyPath="yes" Source="!(wix.ServerFiles)\sbin\cygldap_r-2-4-2.dll" />
         </Component>
-        <Component Id="cmpD42B7C81348BA0449D55A9CD26A2D271" Guid="{8D7D822F-CF17-4557-A5F9-3FF48A097F5E}">
-          <File Id="filEF9929A63525407F66CA82292617FF44" KeyPath="yes" Source="!(wix.ServerFiles)\sbin\cygsasl2-2.dll" />
-        </Component>
         <Component Id="cmpCC1DBBF2A8814F3C4DC41D7E96AC1162" Guid="{9BDF0057-3632-40E5-8DAF-13D95332B8E7}">
           <File Id="fil9EC7286A65BCA321D0382241BCFF067B" KeyPath="yes" Source="!(wix.ServerFiles)\sbin\cygsasl2-3.dll" />
         </Component>
@@ -2527,7 +2524,6 @@
       <ComponentRef Id="cmpC605352BCD1C62A08FE04B2142609F44" />
       <ComponentRef Id="cmpE4D30CE685E1511CE6F60429A9191544" />
       <ComponentRef Id="cmp690A5FB64C20DDC74DFE39EC982456BD" />
-      <ComponentRef Id="cmpD42B7C81348BA0449D55A9CD26A2D271" />
       <ComponentRef Id="cmpCC1DBBF2A8814F3C4DC41D7E96AC1162" />
       <ComponentRef Id="cmp952B610B6266CAF9995F5ECFB4B41CB3" />
       <ComponentRef Id="cmp668202A8CC07BDFD285FEE2D8DF05492" />

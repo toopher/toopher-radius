@@ -1,3 +1,4 @@
+cd %~dp0
 call test_config.cmd
 if ERRORLEVEL 1 goto :eof
 set WORKING_DIR=%~dp0
