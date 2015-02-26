@@ -151,7 +151,7 @@ Start the RADIUS server
 ### Windows
     net start toopher-freeradius
 
-Testing the Radius server
+Testing the RADIUS server
 -------------------------
 * Uncomment the following lines in `/etc/raddb/clients.conf`:
 
@@ -170,6 +170,11 @@ Testing the Radius server
 
         sudo service radiusd stop
         sudo radiusd -X
+
+    **Windows**
+        
+        net stop toopher-freeradius
+        Start > Toopher > Run in Debug Mode
 
 * **Ubuntu and Windows Only** - Modify the `RADDB` constant in the test script `/etc/raddb/pap_challenge_request.pl` 
 
