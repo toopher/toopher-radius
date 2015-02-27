@@ -174,7 +174,7 @@ Testing the RADIUS server
     **Windows**
         
         net stop toopher-freeradius
-        Start > Toopher > Run in Debug Mode
+        Start -> Toopher -> Run in Debug Mode
 
 * **Ubuntu and Windows Only** - Modify the `RADDB` constant in the test script `/etc/raddb/pap_challenge_request.pl` 
 
