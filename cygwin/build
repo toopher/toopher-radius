@@ -70,7 +70,6 @@ cp -fr ./libperl.a .staticperl/perl/lib/CORE/libperl.a
 export PATH=${STATICPERL_BUILD}/bin:${PATH}
 PERL=`command -v perl`
 echo PERL is $PERL
-exit
 
 #clean up
 rm *.o
