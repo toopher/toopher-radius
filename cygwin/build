@@ -2,20 +2,10 @@ PERL_VERSION=5.12.3
 FREERAD_TAG=toopher-RADIUS/1.0
 
 FREERAD_BUILD=${PWD}/toopher-RADIUS-build
+STATICPERL_BUILD=${PWD}/.staticperl
+
 mkdir -p ${FREERAD_BUILD}
 rm -fr ${FREERAD_BUILD}/*
-
-if `command -v perl >/dev/null 2>&1`
-then
-  # perl is installed
-  PERL=`command -v perl`
-  cp $PERL $PERL.old
-else
-  # no perl - we'll put ours in /usr/local/bin/perl
-  PERL=/usr/local/bin/perl
-fi
-
-echo PERL is $PERL
 
 echo Download/Configure/Build/Install staticperl
 # build and install staticperl to .staticperl/perl/bin
@@ -30,7 +20,6 @@ cp -fr .staticperl/src/perl-${PERL_VERSION}/libperl.a .staticperl/perl/lib/CORE/
 #now (re)build staticperl
 ./staticperl fetch
 ./staticperl install
-
 
 echo
 echo Installing/Updating CPAN modules.  Some modules might take several attempts.
@@ -75,7 +64,13 @@ echo STATICPERL_OPTS is ${STATICPERL_OPTS}
 
 cp -fr ./libperl.a .staticperl/perl/bin/libperl.a
 cp -fr ./libperl.a .staticperl/perl/lib/CORE/libperl.a
-cp -fr ./perl.exe ${PERL}
+
+
+# add staticperl to the PATH so the script uses the correct perl
+export PATH=${STATICPERL_BUILD}/bin:${PATH}
+PERL=`command -v perl`
+echo PERL is $PERL
+exit
 
 #clean up
 rm *.o
@@ -185,14 +180,6 @@ for cyg_dll in "${CYGWIN_DLLS[@]}"
 do
   cp /bin/${cyg_dll} ${FREERAD_BUILD}/sbin/${cyg_dll}
 done
-
-echo Restore old perl
-if [ -e $PERL.old ]
-then
-  rm $PERL
-  mv $PERL.old $PERL
-fi
-
 
 echo creating toopher_cygwin_freeradius.tgz
 tar czvf toopher_cygwin_freeradius.tgz ${FREERAD_BUILD}
