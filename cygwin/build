@@ -29,7 +29,7 @@ CPAN_MODULES=( Digest::MD5 YAML LWP::UserAgent Encode Data::Dumper Digest::SHA
   Digest::SHA1 Digest::HMAC_SHA1 Net::OAuth::ConsumerRequest Crypt::SSLeay
   Net::SSLeay JSON::XS JSON Net::LDAP HTTP::Request::Common Try::Tiny
   URL::Encode Term::ReadPassword Data::HexDump Authen::Radius File::Copy
-  Digest::SHA Mozilla::CA)
+  Digest::SHA Mozilla::CA LWP::Protocol::https)
 
 for module in "${CPAN_MODULES[@]}"
 do
