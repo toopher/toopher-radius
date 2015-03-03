@@ -19,9 +19,9 @@ Setup
         gcc-g++
         libgdbm-devel
 
-3. If you have whitespace in your home directory, edit `/etc/passwd` to change your home directory
+3. If you have whitespace in your home directory name, edit `/etc/passwd` to change your home directory
 
-    How to create `/etc/passwd`, if it does not exist:
+    How to create `/etc/passwd`, if it does not exist in Cygwin:
 
         mkpasswd -L > /etc/passwd
 
@@ -47,7 +47,7 @@ If you see a large number of failures to install a CPAN module or a CPAN module 
     ./staticperl instcpan Net::SSLeay
 
 #### Perl syntax/function errors
-If the build output contains errors regarding Perl syntax or incorrect function calls, make sure that you are using the perl that was built with staticperl in `.staticperl/bin`
+If the build output contains errors regarding Perl syntax or incorrect function calls, make sure that you are using the perl that was built with staticperl (`.staticperl/bin/perl`)
 
 #### Missing cyggcc_s-1.dll
 If you are missing `/bin/cyggcc_s-1.dll`, make sure that you are running a 32-bit version of Cygwin
