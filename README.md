@@ -175,7 +175,7 @@ Start the RADIUS server
 
 Testing/Debugging the RADIUS server
 -------------------------
-Uncomment the following lines in `/etc/raddb/clients.conf` (Start -> Toopher -> Toopher-Radius Server -> Edit clients.conf in Windows):
+Uncomment the following lines in `/etc/raddb/toopher_users` (C:\Program Files (x86)\Toopher\Toopher FreeRADIUS Server\etc\raddb\toopher_users in Windows):
 
 * `usr_local Cleartext-Password := "p@ssw0rd", Auth-Type := PAP`
 * `usr_local_toopher Cleartext-Password := "p@ssw0rd", Auth-Type := TOOPHER_PAP`
@@ -199,7 +199,7 @@ Start -> Toopher -> Toopher-Radius Server -> Run in Debug Mode -> Run as adminis
 
 Attempt to authenticate the `usr_local` and `toopher_usr_local` users via your VPN. You should be able to see debug output in your terminal from authentication requests to your RADIUS server. 
 
-**Recomment the lines in `/etc/raddb/clients.conf` after you are finished testing.**
+**Recomment the lines in `/etc/raddb/toopher_users` after you are finished testing.**
 
 ### Linux-only test script
 
