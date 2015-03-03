@@ -2,20 +2,10 @@ PERL_VERSION=5.12.3
 FREERAD_TAG=toopher-RADIUS/1.0
 
 FREERAD_BUILD=${PWD}/toopher-RADIUS-build
+STATICPERL_BUILD=${PWD}/.staticperl
+
 mkdir -p ${FREERAD_BUILD}
 rm -fr ${FREERAD_BUILD}/*
-
-if `command -v perl >/dev/null 2>&1`
-then
-  # perl is installed
-  PERL=`command -v perl`
-  cp $PERL $PERL.old
-else
-  # no perl - we'll put ours in /usr/local/bin/perl
-  PERL=/usr/local/bin/perl
-fi
-
-echo PERL is $PERL
 
 echo Download/Configure/Build/Install staticperl
 # build and install staticperl to .staticperl/perl/bin
@@ -31,16 +21,15 @@ cp -fr .staticperl/src/perl-${PERL_VERSION}/libperl.a .staticperl/perl/lib/CORE/
 ./staticperl fetch
 ./staticperl install
 
-
 echo
 echo Installing/Updating CPAN modules.  Some modules might take several attempts.
 # install needed CPAN modules.  This can still fail for unknown reasons, so
 # grep for failure messages and retry for each module
-CPAN_MODULES=( Digest::MD5 YAML LWP::UserAgent Encode Data::Dumper Digest::SHA 
+CPAN_MODULES=( Digest::MD5 YAML LWP::UserAgent Encode Data::Dumper Digest::SHA
   Digest::SHA1 Digest::HMAC_SHA1 Net::OAuth::ConsumerRequest Crypt::SSLeay
-  Net::SSLeay JSON::XS JSON Net::LDAP HTTP::Request::Common Try::Tiny 
+  Net::SSLeay JSON::XS JSON Net::LDAP HTTP::Request::Common Try::Tiny
   URL::Encode Term::ReadPassword Data::HexDump Authen::Radius File::Copy
-  Digest::SHA )
+  Digest::SHA Mozilla::CA LWP::Protocol::https)
 
 for module in "${CPAN_MODULES[@]}"
 do
@@ -75,9 +64,14 @@ echo STATICPERL_OPTS is ${STATICPERL_OPTS}
 
 cp -fr ./libperl.a .staticperl/perl/bin/libperl.a
 cp -fr ./libperl.a .staticperl/perl/lib/CORE/libperl.a
-cp -fr ./perl.exe ${PERL}
 
-#clean up 
+
+# add staticperl to the PATH so the script uses the correct perl
+export PATH=${STATICPERL_BUILD}/bin:${PATH}
+PERL=`command -v perl`
+echo PERL is $PERL
+
+#clean up
 rm *.o
 rm *.a
 
@@ -119,7 +113,7 @@ sed -i 's/= radeapclient/= radeapclient$(EXEEXT)/g' ${FREERAD}/src/modules/rlm_e
 pushd ${FREERAD}
 
 # configure freeradius source
-./configure --disable-shared --enable-static --prefix=${FREERAD_BUILD} \
+LIBS="-llber" ./configure --disable-shared --enable-static --prefix=${FREERAD_BUILD} \
   --with-rlm_krb5=no --with-rlm_pam=no --with-rlm_eap_ikev2=no --with-rlm_sql_oracle=no \
   --with-rlm_chap=no --with-rlm_mschap=no --with-rlm_python=no --with-dhcp=no \
   --with-rlm_wimax=no --with-rlm_ippool=no --with-rlm_otp=no --with-rlm_ldap=yes \
@@ -152,7 +146,7 @@ cp ../freeradius/etc/raddb/toopher_radius.pl ${FREERAD_BUILD}/etc/raddb/
 cp ../README.html ${FREERAD_BUILD}/
 cp ../linux/prep-config-files.pl ${FREERAD_BUILD}
 
-echo 
+echo
 
 echo get rid of sites-available/default - will come from templated version
 rm ${FREERAD_BUILD}/etc/raddb/sites-available/*
@@ -177,22 +171,14 @@ echo \$INCLUDE dictionary.toopher >> ${FREERAD_BUILD}/etc/raddb/dictionary
 cp -r installed_scripts/* ${FREERAD_BUILD}
 
 echo Copying cygwin dlls necessary to run in normal windows environment
-CYGWIN_DLLS=( cygwin1.dll cyggdbm-4.dll cyglber-2-4-2.dll cygldap-2-4-2.dll 
-  cygldap_r-2-4-2.dll cygcrypto-1.0.0.dll cygz.dll 
+CYGWIN_DLLS=( cygwin1.dll cyggdbm-4.dll cyglber-2-4-2.dll cygldap-2-4-2.dll
+  cygldap_r-2-4-2.dll cygcrypto-1.0.0.dll cygz.dll
   cyggcc_s-1.dll cygsasl2-2.dll cygsasl2-3.dll cygssl-1.0.0.dll
   cygcrypt-0.dll )
 for cyg_dll in "${CYGWIN_DLLS[@]}"
 do
   cp /bin/${cyg_dll} ${FREERAD_BUILD}/sbin/${cyg_dll}
 done
-
-echo Restore old perl
-if [ -e $PERL.old ]
-then
-  rm $PERL
-  mv $PERL.old $PERL
-fi
-
 
 echo creating toopher_cygwin_freeradius.tgz
 tar czvf toopher_cygwin_freeradius.tgz ${FREERAD_BUILD}

@@ -1,3 +1,4 @@
+cd %~dp0
 if exist etc\raddb\toopher_radius_config.pm (
   exit /B 0
 ) else (

@@ -1,3 +1,4 @@
+cd %~dp0
 set CYGWIN=nodosfilewarning
 call test_config.cmd
 if ERRORLEVEL 1 goto :eof
