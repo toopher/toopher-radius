@@ -195,9 +195,9 @@ Stop the RADIUS server if it is currently active, and run it in debug mode:
 * Windows
 
         net stop toopher-freeradius
-Start -> Toopher -> Toopher-Radius Server -> Run in Debug Mode
+Start -> Toopher -> Toopher-Radius Server -> Run in Debug Mode -> Run as administrator...
 
-Attempt to authenticate the `usr_local` and `toopher_usr_local` users via your VPN. You should see debug output from authentication requests to your RADIUS server. 
+Attempt to authenticate the `usr_local` and `toopher_usr_local` users via your VPN. You should be able to see debug output in your terminal from authentication requests to your RADIUS server. 
 
 **Recomment the lines in `/etc/raddb/clients.conf` after you are finished testing.**
 
