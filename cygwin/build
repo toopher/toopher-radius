@@ -114,7 +114,7 @@ pushd ${FREERAD}
 
 # configure freeradius source
 # LIBS environment variable adds additional libraries to the FreeRADIUS build path
-# lber.lib is missing in the FreeRADIUS makefile, so it is explicitly defined here
+# lber.a is missing in the FreeRADIUS makefile, so it is explicitly defined here
 LIBS="-llber" ./configure --disable-shared --enable-static --prefix=${FREERAD_BUILD} \
   --with-rlm_krb5=no --with-rlm_pam=no --with-rlm_eap_ikev2=no --with-rlm_sql_oracle=no \
   --with-rlm_chap=no --with-rlm_mschap=no --with-rlm_python=no --with-dhcp=no \
