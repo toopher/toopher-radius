@@ -104,7 +104,7 @@ Additionally, you may customize the prompt displayed to users when they initiall
  
 RADIUS Configuration - Windows
 --------------------
-Windows Administrators can configure the most commonly-used parameters through the Start menu (Toopher -> Toopher-RADIUS Server -> Configuration)
+Windows Administrators can configure the most commonly-used parameters through the Start menu (Toopher -> Toopher-RADIUS Server -> Configuration -> Run as administrator)
 
 Toopher API Settings:
 
@@ -122,10 +122,15 @@ RADIUS Prompt Text:
 
 LDAP settings you will need to edit:
 
-* `LDAP_BASEDN` : Base DN to use for username searches
+* `LDAP_BASEDN` : Base DN to use for username searches 
 * `LDAP_HOST` : Hostname or IP Address of LDAP or ActiveDirectory server
-* `LDAP_IDENTITY` : DN of user to use when connecting to LDAP server to perform user searches.
-* `LDAP_PASSWORD` : The password corresponding to the `LDAP_IDENTITY` user.  *this password will be stored in plaintext on the RADIUS server*
+* `LDAP_IDENTITY` : DN of user to use when connecting to LDAP server to perform user searches (ignore this prompt for anonymous bind)
+* `LDAP_PASSWORD` : The password corresponding to the `LDAP_IDENTITY` user.  *this password will be stored in plaintext on the RADIUS server* (ignore this prompt for anonymous bind)
+
+**Anonymously bind to LDAP**: edit `C:\Program Files (x86)\Toopher\Toopher FreeRADIUS Server\etc\raddb\modules\ldap`, and comment or remove the following two lines:
+
+    identity = "cn=radius-admin,cn=users,dc=example,dc=com"
+    password = p@ssw0rd
 
 LDAP Settings you probably don't need to edit: The following LDAP settings only need to be edited if your organization uses a non-standard LDAP schema.  The default values 
 should work for ActiveDirectory and [inetOrgPerson](http://tools.ietf.org/html/rfc2798) schema, which account for the vast majority of LDAP user databases.  If your organization needs help integrating Toopher-RADIUS with a different LDAP schema, please contact [support@toopher.com](mailto:support@toopher.com) for assistance.
@@ -138,6 +143,23 @@ should work for ActiveDirectory and [inetOrgPerson](http://tools.ietf.org/html/r
     DEFAULT Auth-Type := TOOPHER_ONLY
       Fall-Through = Yes
 ***
+**Configure FreeRADIUS to accept authentication requests from your VPN**
+
+* Open and modify `clients.conf` through the Start menu: (Toopher -> Toopher-Radius Server -> Edit clients.conf)
+* Add the IP address of your VPN solution to `clients.conf`.  This will vary according to your network environment.  As an example, to add a VPN client named `MY_VPN_BOX` accessible at local IP address of `172.16.42.201` with RADIUS secret `s3cr3t`, add the following four lines to `clients.conf`:
+
+        client MY_VPN_BOX {
+            ipaddr = 172.16.42.201
+            secret = s3cr3t
+        }
+
+**Open up ports that FreeRADIUS is listening on**: by default, FreeRADIUS listens for UDP packets on port 1812
+
+* Start -> Windows FireWall with Advanced Security -> Inbound Rules -> New Rule...
+
+**Intall Toopher FreeRadius as a Windows service**
+
+* Start -> Toopher -> Toopher-Radius Server -> Install as a Service -> Run as administrator...
 
 
 Start the RADIUS server
@@ -151,6 +173,53 @@ Start the RADIUS server
 ### Windows
     net start toopher-freeradius
 
+Testing/Debugging the RADIUS server
+-------------------------
+Uncomment the following lines in `/etc/raddb/toopher_users` (C:\Program Files (x86)\Toopher\Toopher FreeRADIUS Server\etc\raddb\toopher_users in Windows):
+
+* `usr_local Cleartext-Password := "p@ssw0rd", Auth-Type := PAP`
+* `usr_local_toopher Cleartext-Password := "p@ssw0rd", Auth-Type := TOOPHER_PAP`
+
+Stop the RADIUS server if it is currently active, and run it in debug mode:
+    
+* Ubuntu
+
+        sudo service freeradius stop
+        sudo freeradius -X
+   
+* CentOS / RHEL
+
+        sudo service radiusd stop
+        sudo radiusd -X
+
+* Windows
+
+        net stop toopher-freeradius
+Start -> Toopher -> Toopher-Radius Server -> Run in Debug Mode -> Run as administrator...
+
+Attempt to authenticate the `usr_local` and `toopher_usr_local` users via your VPN. You should be able to see debug output in your terminal from authentication requests to your RADIUS server. 
+
+**Recomment the lines in `/etc/raddb/toopher_users` after you are finished testing.**
+
+### Linux-only test script
+
+**Ubuntu Only** - Modify the `RADDB` constant in the test script `/etc/raddb/pap_challenge_request.pl`:
+        
+    use constant RADDB => '/etc/freeradius';
+
+Test username/password authentication
+    
+    sudo perl /etc/raddb/pap_challenge_request.pl usr_local p@ssw0rd
+    > sending RADIUS request
+    > server response type = Access-Accept (2)         
+
+Test username/password + Toopher authentication (requires valid API keys in `toopher_radius_config.pm`) 
+
+    sudo perl /etc/raddb/pap_challenge_request.pl usr_local_toopher p@ssw0rd
+    > sending RADIUS request
+    > server response type = Access-Challenge (11)
+    Toopher 2-factor authentication is enabled for your account.  Please enter the pairing phrase generated by the Toopher mobile app: < your pairing phrase >
+    > server response type = Access-Accept (2) 
 
 Configure your RADIUS-Compatible Gateway Device
 ----------------------------------------------------

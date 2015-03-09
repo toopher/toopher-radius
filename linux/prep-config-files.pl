@@ -5,7 +5,7 @@ use Try::Tiny;
 use File::Copy "cp";
 
 my @TEMPLATED_FILES = ("modules/files", "modules/ldap", "modules/perl", "sites-available/default", "toopher_radius_config.pm", "toopher_radius.pl", "toopher_users", "dictionary.toopher", "ToopherAPI.pm", "ldap.attrmap");
-my @COPY_IF_MISSING = ("clients.conf");
+my @COPY_IF_MISSING = ("clients.conf", "pap_challenge_request.pl");
 my $ldapAttrConfigVariableMap = {
   'Toopher-Reset-Email' => 'RESET_EMAIL_LDAP_ATTRIBUTE'
 };

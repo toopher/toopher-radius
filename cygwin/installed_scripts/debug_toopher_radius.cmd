@@ -15,6 +15,7 @@ echo.
 echo Press [Enter] to continue starting the server, or [Ctrl-C] to abort
 pause
 
+cd %~dp0
 set CYGWIN=nodosfilewarning
 call test_config.cmd
 if ERRORLEVEL 1 goto :eof

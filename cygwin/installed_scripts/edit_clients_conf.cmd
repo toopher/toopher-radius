@@ -1,1 +1,2 @@
-write etc\raddb\clients.conf
+cd %~dp0
+Write etc\raddb\clients.conf
