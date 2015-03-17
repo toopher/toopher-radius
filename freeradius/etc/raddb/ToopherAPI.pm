@@ -13,10 +13,12 @@ use constant DEFAULT_TOOPHER_API => 'https://api.toopher.com/v1/';
 use constant ERROR_CODE_USER_DISABLED => 704;
 use constant ERROR_CODE_USER_UNKNOWN => 705;
 use constant ERROR_CODE_TERMINAL_UNKNOWN => 706;
+use constant ERROR_CODE_USER_REQUIRES_OTP => 708;
 use constant ERROR_USER_DISABLED => "The specified user has disabled Toopher Authentication";
 use constant ERROR_USER_UNKNOWN => "No matching user exists";
 use constant ERROR_TERMINAL_UNKNOWN => "No matching terminal exists";
 use constant ERROR_PAIRING_DEACTIVATED => "Pairing has been deactivated";
+use constant ERROR_USER_REQUIRES_OTP => "User requires OTP authentication";
 
 sub base_log{
   print $_[0];
@@ -211,6 +213,7 @@ struct(
     granted => '$',
     automated => '$',
     reason => '$',
+    reason_code => '$',
     terminal_id => '$',
     terminal_name => '$',
     _raw => '$',
@@ -238,6 +241,7 @@ sub _authenticationStatusFromJson
     granted => $obj->{'granted'},
     automated => $obj->{'automated'},
     reason => $obj->{'reason'},
+    reason_code => $obj->{'reason_code'},
     terminal_id => $obj->{'terminal'}{'id'},
     terminal_name => $obj->{'terminal'}{'name'},
     _raw => $obj,

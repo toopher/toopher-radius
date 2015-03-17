@@ -84,8 +84,9 @@ sub issue_pairing_challenge_prompt {
 }
 
 sub issue_otp_challenge_prompt {
+  my ($prompt_override) = @_;
   $RAD_REPLY{'State'} = CHALLENGE_STATE_OTP;
-  $RAD_REPLY{'Reply-Message'} = $config->{'prompts'}{'otp_challenge'} . " " . $config->{'prompts'}{'self_reset'};
+  $RAD_REPLY{'Reply-Message'} = $prompt_override or $config->{'prompts'}{'otp_challenge'} . " " . $config->{'prompts'}{'self_reset'};
   $RAD_CHECK{'Response-Packet-Type'} = 'Access-Challenge';
   return RLM_MODULE_HANDLED;
 }
@@ -174,7 +175,12 @@ sub authenticate_zrs {
     $terminal_identifier = &get_terminal_identifier;
   }
   try {
-    return &poll_for_auth($api->authenticate_by_user_name($username, $terminal_identifier));
+    my $auth_request = $api->authenticate_by_user_name($username, $terminal_identifier);
+    if ($auth_request->reason_code == ToopherAPI::ERROR_CODE_USER_REQUIRES_OTP) {
+      return &issue_otp_challenge_prompt("Please enter a valid one-time-password (OTP) to authenticate");
+    } else {
+      return &poll_for_auth($auth_request);
+    }
   } catch {
     chomp();
     _log('Caught error on request: ' . $_);
