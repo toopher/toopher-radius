@@ -135,14 +135,10 @@ sub set_toopher_enabled_for_user
 sub deactivate_pairings_for_username
 {
   my ($self, $user_name) = @_;
-  my @pairings = @{$self->_get_user_pairings_by_username($user_name)};
-  foreach my $pairing (@pairings) {
-    my $params = {
-      'deactivated' => 'True',
-    };
-    $_log->("  Deactivating pairing ID=" . $pairing->{'id'});
-    $self->_update_pairing($pairing, $params);
-  }
+  my $params = {
+    'user_name' => $user_name,
+  };
+  $self->post('users/reset', $params);
 }
 
 sub send_pairing_reset_email
