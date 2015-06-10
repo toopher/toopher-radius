@@ -132,7 +132,7 @@ sub set_toopher_enabled_for_user
   return $self->post('users/' . $user_id, $params);
 }
 
-sub deactivate_pairings_for_username
+sub reset_user
 {
   my ($self, $user_name) = @_;
   my $params = {
