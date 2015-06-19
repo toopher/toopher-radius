@@ -450,6 +450,67 @@ if($ARGV[0] eq 'unittest'){
   } catch {
     die("Error while resetting user pairing: $_\n");
   };
+} elsif($ARGV[0] eq 'reset-terminal') {
+  my $user_name = $ARGV[1];
+  my $terminal_identifier = $ARGV[2];
+  if (not ($user_name and $terminal_identifier)) {
+    print "*****************************\n";
+    print "**  Toopher Terminal Reset  **\n";
+    print "*****************************\n";
+    print "\nUsername > ";
+    $user_name = <STDIN>;
+    chomp($user_name);
+    print "\nTerminal Identifier (IP) > ";
+    $terminal_identifier = <STDIN>;
+    chomp($terminal_identifier);
+  }
+  die ("Usage: $0 reset-terminal [username] [terminal identifier]\n") unless ($user_name and $terminal_identifier);
+  my $terminal_name_extra = sha256_base64($user_name . $terminal_identifier);
+  try {
+    instantiate_toopher_api();
+    my $auth_request = $api->authenticate_by_user_name($user_name, $terminal_name_extra);
+    my $terminal_id = $auth_request->terminal_id;
+    my $params = {
+      'name_extra' => '00000000',
+    };
+    $api->post('user_terminals/' . $terminal_id, $params);
+  } catch {
+    chomp();
+    if ($_ eq ToopherAPI::ERROR_TERMINAL_UNKNOWN) {
+      die("Error: no terminal found that matches the given terminal identifier\n");
+    } else {
+      die("Error while resetting user terminal: $_\n");
+    }
+  };
+} elsif ($ARGV[0] eq 'get-otps') {
+  my $user_name = $ARGV[1];
+  if (not $user_name) {
+    print "******************************\n";
+    print "**  Toopher OTP Generation  **\n";
+    print "******************************\n";
+    print "\nUsername to retrieve OTP > ";
+    $user_name = <STDIN>;
+    chomp($user_name);
+  }
+  die ("Usage: $0 get-otps [username]\n") unless $user_name;
+  try {
+    instantiate_toopher_api();
+    my $params = {
+      'user_name' => $user_name,
+      'create_user_if_needed' => 'True',
+    };
+    my $result = $api->post('users/activate_next_otp_list', $params);
+    print("\nGenerated One-Time Passwords for user $user_name:\n");
+    my $otp_counter = 1;
+    foreach my $otp (@{$result->{'otp_list'}}) {
+      print("\t$otp_counter:\t$otp\n");
+      $otp_counter++;
+    }
+    print("OK\n");
+  } catch {
+    die("Error while resetting user pairing: $_\n");
+  };
+
 } else {
   instantiate_toopher_api();
 }
