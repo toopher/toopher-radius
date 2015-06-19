@@ -491,6 +491,7 @@ if($ARGV[0] eq 'unittest'){
     instantiate_toopher_api();
     my $params = {
       'user_name' => $user_name,
+      'create_user_if_needed' => 'True',
     };
     my $result = $api->post('users/activate_next_otp_list', $params);
     print("\nGenerated One-Time Passwords for user $user_name:\n");
