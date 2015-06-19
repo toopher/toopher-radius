@@ -445,7 +445,7 @@ if($ARGV[0] eq 'unittest'){
   die ("Usage: $0 reset-pairing [username]\n") unless $user_name;
   try {
     instantiate_toopher_api();
-    $api->deactivate_pairings_for_username($user_name);
+    $api->reset_user($user_name);
     print("OK\n");
   } catch {
     die("Error while resetting user pairing: $_\n");
